@@ -72,7 +72,7 @@ export function WellMiniCard({ well, idx, wUpg, hasManager, isEnabled, onCollect
 
         {/* Cylinder */}
         <div style={{ width:64, height:84, position:"relative", borderRadius:"8px 8px 26px 26px", border: hasManager ? `2px solid ${P.sage}` : `1.5px solid ${P.border}`, overflow:"hidden", background:P.panelBg }}>
-          <div style={{ position:"absolute", bottom:0, left:0, right:0, height:`${fp}%`, background:"linear-gradient(to top, #527898, #6b8fa8, #80a6c0)", transition:"height 0.08s linear", borderRadius:"0 0 24px 24px" }}>
+          <div style={{ position:"absolute", bottom:0, left:0, right:0, height:`${fp}%`, background:"linear-gradient(to top, #152c3d, #1e3a52, #2d5070)", transition:"height 0.08s linear", borderRadius:"0 0 24px 24px" }}>
             <div style={{ position:"absolute", top:0, left:0, right:0, height:5, background:"linear-gradient(to bottom, rgba(255,255,255,0.28), transparent)", borderRadius:"50%" }}/>
           </div>
           <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -82,7 +82,7 @@ export function WellMiniCard({ well, idx, wUpg, hasManager, isEnabled, onCollect
                 <div style={{ fontSize:13, fontWeight:700, color:"#fff", fontFamily:"'Junicode',sans-serif", textShadow:"0 1px 3px rgba(0,0,0,0.5)" }}>{well.collectTimer.toFixed(1)}s</div>
               </div>
             ) : (
-              <div style={{ fontSize:14, fontWeight:700, color: fp > 60 ? "#ffffff" : P.textPrimary, fontFamily:"'Junicode',sans-serif", textShadow: fp > 60 ? "0 1px 3px rgba(0,0,0,0.4)" : "none" }}>
+              <div style={{ fontSize:14, fontWeight:700, color: fp > 50 ? "#ffffff" : P.textPrimary, fontFamily:"'Junicode',sans-serif", textShadow: fp > 50 ? "0 1px 3px rgba(0,0,0,0.5)" : "none" }}>
                 {fmt(well.ink)}
               </div>
             )}
@@ -114,7 +114,7 @@ export function PressMiniCard({ press, idx, pUpg, hasManager, onStart, eject, on
   const pressInterval = UPGRADES_BY_NAME["Press Speed"].valueFormula(pUpg["Press Speed"] ?? 0);
   const interval = Math.max(0.1, pressInterval);
   const progress = press.running ? Math.min(100, ((interval - press.timer) / interval) * 100) : 0;
-  const lcTT = TILE_TYPES.lexicoin;
+  const nTT = TILE_TYPES.normal;
 
   return (
     <div style={{ width:100, flexShrink:0, position:"relative" }}>
@@ -131,15 +131,15 @@ export function PressMiniCard({ press, idx, pUpg, hasManager, onStart, eject, on
             animate={press.running ? { rotate: [0, -0.4, 0.4, 0] } : { rotate: 0 }}
             transition={press.running ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" } : {}}
             style={{
-              width:52, height:52, borderRadius:8, background:lcTT.color,
+              width:52, height:52, borderRadius:8, background:nTT.color,
               display:"flex", alignItems:"center", justifyContent:"center",
-              border: press.running ? `2px solid ${P.ink}` : hasManager ? `2px solid ${P.sage}` : `1.5px solid ${lcTT.border}`,
+              border: press.running ? `2px solid ${P.ink}` : hasManager ? `2px solid ${P.sage}` : `1.5px solid ${nTT.border}`,
               boxShadow: press.running ? `0 0 8px ${P.ink}40` : "none",
             }}
-          ><Aperture size={24} strokeWidth={1.5} color={lcTT.text}/></motion.div>
+          ><Aperture size={24} strokeWidth={1.5} color={nTT.text}/></motion.div>
           {press.running ? (<>
             <div style={{ width:64, height:4, borderRadius:2, background:P.borderLight, overflow:"hidden" }}>
-              <div style={{ height:"100%", width:`${progress}%`, background:"linear-gradient(90deg, #527898, #6b8fa8)", borderRadius:2 }}/>
+              <div style={{ height:"100%", width:`${progress}%`, background:"linear-gradient(90deg, #152c3d, #2d5070)", borderRadius:2 }}/>
             </div>
             <div style={{ fontSize:10, color:P.textMuted, fontFamily:"'Junicode',sans-serif" }}>{press.timer.toFixed(1)}s</div>
           </>) : (

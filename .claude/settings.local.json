@@ -25,7 +25,14 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(grep:*)",
-      "Bash(timeout 8 npm run dev:*)"
+      "Bash(timeout 8 npm run dev:*)",
+      "Bash(xargs sed:*)",
+      "Bash(ls:*)",
+      "Bash(timeout 15 npm run dev:*)",
+      "Bash(timeout 10 npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(npx esbuild:*)",
+      "Bash(git status:*)"
     ]
   }
 }

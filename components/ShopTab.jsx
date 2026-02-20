@@ -87,21 +87,33 @@ export function ShopTab({ quills, goldenNotebooks, ownedCovers, ownedPages, acti
             {PERM_UPGRADES.map(upg => {
               const isLocked = upg.lockedIf?.({ permUpgradeLevels }) ?? false;
               const level = permUpgradeLevels[upg.id] || 0;
-              const { maxed, cost, description } = getUpgCard(upg, level);
+              const { maxed, cost, description, boxLabel } = getUpgCard(upg, level);
               const isFormula = !upg.levels;
 
-              // Bulk-buy calculation for formula-based upgrades
+              // Bulk-buy calculation
               const isMax = qty === "max";
               const bulk  = isFormula && !maxed && !isLocked ? calcBulkBuy(upg, level, quills, "max") : null;
               const fixed = isFormula && !maxed && !isLocked && !isMax ? calcQtyBuy(upg, level, qty) : null;
-              const purchaseCount = isFormula ? (isMax ? (bulk?.count ?? 0) : (fixed?.count ?? 0)) : 1;
-              const purchaseCost  = isFormula ? (isMax ? (bulk?.totalCost ?? 0) : (fixed?.totalCost ?? 0)) : cost;
+              // Levels-type max: greedily sum consecutive level costs until quills run out
+              const levelsMax = !isFormula && isMax && !maxed && !isLocked && upg.levels ? (() => {
+                let count = 0, total = 0, lvl = level;
+                while (lvl < upg.maxLevel && total + upg.levels[lvl].cost <= quills) {
+                  total += upg.levels[lvl].cost; count++; lvl++;
+                }
+                return { count, totalCost: total };
+              })() : null;
+              const purchaseCount = isFormula
+                ? (isMax ? (bulk?.count ?? 0) : (fixed?.count ?? 0))
+                : (isMax ? (levelsMax?.count ?? 1) : 1);
+              const purchaseCost  = isFormula
+                ? (isMax ? (bulk?.totalCost ?? 0) : (fixed?.totalCost ?? 0))
+                : (isMax && levelsMax ? levelsMax.totalCost : cost);
               const displayCost   = isFormula
                 ? ((isMax && bulk?.count === 0) ? Math.ceil(upg.costFormula(level)) : purchaseCost)
-                : cost;
+                : (isMax && levelsMax ? levelsMax.totalCost : cost);
               const canAfford = !maxed && !isLocked && (isFormula
                 ? purchaseCount > 0 && quills >= purchaseCost
-                : quills >= cost);
+                : (isMax ? (levelsMax?.count ?? 0) > 0 : quills >= cost));
 
               return (
                 <div key={upg.id} style={{
@@ -136,7 +148,7 @@ export function ShopTab({ quills, goldenNotebooks, ownedCovers, ownedPages, acti
                         background:"#fdf5d0", border:`1px solid #dcc878`, borderRadius:4,
                         padding:"3px 10px", display:"flex", flexDirection:"column", alignItems:"center",
                       }}>
-                        <div style={{ fontSize:10, fontFamily:"'Junicode',sans-serif", fontWeight:700, color:P.textPrimary, lineHeight:1.2 }}>{level}/{upg.maxLevel}</div>
+                        <div style={{ fontSize:10, fontFamily:"'Junicode',sans-serif", fontWeight:700, color:P.textPrimary, lineHeight:1.2 }}>{boxLabel}</div>
                         <div style={{ fontSize:7, fontFamily:"'Junicode',sans-serif", color:"#7a5800", lineHeight:1 }}>Max</div>
                       </div>
                     ) : (

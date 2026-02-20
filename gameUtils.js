@@ -229,9 +229,9 @@ export function getAvailableLetterCounts(letters, specialTiles, wordInput) {
 // snapshot: saved state object from localStorage. elapsedSeconds: time away (capped by caller).
 export function computeOfflineProgress(snapshot, elapsedSeconds) {
   const {
-    wells = [], wellMgrCount = 0, wellMgrEnabled = [],
+    wells = [], wellMgrOwned = [], wellMgrEnabled = [],
     wellUpgradeLevels = [],
-    presses = [], pressMgrCount = 0, pressUpgradeLevels = [],
+    presses = [], pressMgrOwned = [], pressUpgradeLevels = [],
     totalLetters = 0, effectiveInkMult = 1, effectiveMaxLetters = 50,
   } = snapshot;
 
@@ -242,7 +242,7 @@ export function computeOfflineProgress(snapshot, elapsedSeconds) {
   // Managed wells accumulate ink at fill rate continuously (manager auto-collects when full).
   // Total throughput = fillRate × inkMult × time, regardless of starting fill level.
   for (let i = 0; i < wells.length; i++) {
-    if (i >= wellMgrCount || !wellMgrEnabled[i]) continue;
+    if (!wellMgrOwned[i] || !wellMgrEnabled[i]) continue;
     const wUpg = wellUpgradeLevels[i] || {};
     const fillRate = UPGRADES_BY_NAME["Well Speed"].valueFormula(wUpg["Well Speed"] ?? 0);
     inkEarned += fillRate * effectiveInkMult * elapsedSeconds;
@@ -251,7 +251,7 @@ export function computeOfflineProgress(snapshot, elapsedSeconds) {
   // Managed presses complete full cycles. Letters are capped at effectiveMaxLetters.
   let letterSlots = Math.max(0, effectiveMaxLetters - totalLetters);
   for (let i = 0; i < presses.length; i++) {
-    if (i >= pressMgrCount || letterSlots <= 0) break;
+    if (!pressMgrOwned[i] || letterSlots <= 0) continue;
     const pUpg = pressUpgradeLevels[i] || {};
     const pressInterval = UPGRADES_BY_NAME["Press Speed"].valueFormula(pUpg["Press Speed"] ?? 0);
     const pressYield    = UPGRADES_BY_NAME["Press Yield"].valueFormula(pUpg["Press Yield"] ?? 0);

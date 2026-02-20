@@ -63,13 +63,13 @@ export default function Lexicographer() {
   // Multi-well system
   const [wellCount, setWellCount] = useState(isTutorial ? 0 : 1);
   const [wells, setWells] = useState(() => isTutorial ? [] : [{ ink: 50, collecting: false, collectTimer: 10 }]);
-  const [wellMgrCount, setWellMgrCount] = useState(0);
+  const [wellMgrOwned, setWellMgrOwned] = useState([]);
   const [wellMgrEnabled, setWellMgrEnabled] = useState([]);
 
   // Multi-press system
   const [pressCount, setPressCount] = useState(0);
   const [presses, setPresses] = useState([]);
-  const [pressMgrCount, setPressMgrCount] = useState(0);
+  const [pressMgrOwned, setPressMgrOwned] = useState([]);
   const [recentTiles, setRecentTiles] = useState([]);
   const [pressEjects, setPressEjects] = useState({});
 
@@ -318,10 +318,12 @@ export default function Lexicographer() {
         .flatMap(l => (l.entries || []).map(e => e.word))
         .filter(w => !currentLexWords.has(w));
       const result   = computeOfflineProgress({
-        wells: vs.wells || [], wellMgrCount: vs.wellMgrCount || 0,
+        wells: vs.wells || [],
+        wellMgrOwned: vs.wellMgrOwned ?? Array.from({length: vs.wellMgrCount || 0}, () => true),
         wellMgrEnabled: vs.wellMgrEnabled || [],
         wellUpgradeLevels: vs.wellUpgradeLevels || [],
-        presses: vs.presses || [], pressMgrCount: vs.pressMgrCount || 0,
+        presses: vs.presses || [],
+        pressMgrOwned: vs.pressMgrOwned ?? Array.from({length: vs.pressMgrCount || 0}, () => true),
         pressUpgradeLevels: vs.pressUpgradeLevels || [],
         totalLetters: totLett, effectiveInkMult: inkMult, effectiveMaxLetters: maxLett,
         monkeyTimers: vs.monkeyTimers || [], monkeySearchTime, findChance, availableMonkeyWords,
@@ -346,11 +348,11 @@ export default function Lexicographer() {
       setLexicon([...baseLexicon, ...monkeyEntries]);
       setWellCount(vs.wellCount ?? 1);
       setWells(vs.wells ?? [{ ink: 50, collecting: false, collectTimer: 10 }]);
-      setWellMgrCount(vs.wellMgrCount ?? 0);
+      setWellMgrOwned(vs.wellMgrOwned ?? Array.from({length: vs.wellMgrCount || 0}, () => true));
       setWellMgrEnabled(vs.wellMgrEnabled ?? []);
       setPressCount(vs.pressCount ?? 0);
       setPresses(vs.presses ?? []);
-      setPressMgrCount(vs.pressMgrCount ?? 0);
+      setPressMgrOwned(vs.pressMgrOwned ?? Array.from({length: vs.pressMgrCount || 0}, () => true));
       setSpecialTiles([...(vs.specialTiles ?? []), ...(state.letterPackPending ?? []), ...(offline?.newSpecials ?? [])]);
       setWellUpgradeLevels(vs.wellUpgradeLevels?.length ? vs.wellUpgradeLevels : [mkWellUpg()]);
       setMgrUpgradeLevels(vs.mgrUpgradeLevels ?? []);
@@ -375,16 +377,16 @@ export default function Lexicographer() {
       achievementProgress, achievementLevels,
       volatileState: {
         collectedInk, letters, wordTiles, lexicon,
-        wellCount, wells, wellMgrCount, wellMgrEnabled,
-        pressCount, presses, pressMgrCount, specialTiles,
+        wellCount, wells, wellMgrOwned, wellMgrEnabled,
+        pressCount, presses, pressMgrOwned, specialTiles,
         wellUpgradeLevels, mgrUpgradeLevels, pressUpgradeLevels,
         monkeyTimers,
       },
     };
   }, [quills, goldenNotebooks, publishedLexicons, ownedCovers, ownedPages,
       activeCoverId, activePageId, permUpgradeLevels, achievementProgress, achievementLevels,
-      collectedInk, letters, wordTiles, lexicon, wellCount, wells, wellMgrCount, wellMgrEnabled,
-      pressCount, presses, pressMgrCount, specialTiles,
+      collectedInk, letters, wordTiles, lexicon, wellCount, wells, wellMgrOwned, wellMgrEnabled,
+      pressCount, presses, pressMgrOwned, specialTiles,
       wellUpgradeLevels, mgrUpgradeLevels, pressUpgradeLevels, monkeyTimers]);
 
   // Fire a PUT /api/user/state with the current full snapshot
@@ -534,7 +536,7 @@ export default function Lexicographer() {
           const critChance     = UPGRADES_BY_NAME["Crit Chance"].valueFormula(wUpg["Crit Chance"] ?? 0);
           const critMult       = UPGRADES_BY_NAME["Crit Multiplier"].valueFormula(wUpg["Crit Multiplier"] ?? 0);
           const mgrCollectTime = UPGRADES_BY_NAME["Manager Speed"].valueFormula(mUpg["Manager Speed"] ?? 0);
-          const isManaged = i < wellMgrCount && wellMgrEnabled[i];
+          const isManaged = !!wellMgrOwned[i] && wellMgrEnabled[i];
           if (w.collecting) {
             if (w.collectTimer <= 0.11) {
               const base = w.ink;
@@ -555,7 +557,7 @@ export default function Lexicographer() {
       });
     }, 100);
     return () => clearInterval(id);
-  }, [wellMgrCount, wellMgrEnabled, wellUpgradeLevels, mgrUpgradeLevels, effectiveInkMult]);
+  }, [wellMgrOwned, wellMgrEnabled, wellUpgradeLevels, mgrUpgradeLevels, effectiveInkMult]);
 
   // --- PRESS TICK (all running presses count down) ---
   useEffect(() => {
@@ -627,9 +629,9 @@ export default function Lexicographer() {
   // --- MANAGER AUTOMATION (press managers only) ---
   useEffect(() => {
     const id = setInterval(() => {
-      if (pressMgrCount > 0) {
+      if (pressMgrOwned.some(Boolean)) {
         setPresses(prev => prev.map((p, i) => {
-          if (i < pressMgrCount && !p.running && totalLetters < effectiveMaxLetters) {
+          if (pressMgrOwned[i] && !p.running && totalLetters < effectiveMaxLetters) {
             const pUpg = pressUpgradeLevels[i] || mkPressUpg();
             const pressInterval = UPGRADES_BY_NAME["Press Speed"].valueFormula(pUpg["Press Speed"] ?? 0);
             return { ...p, running: true, timer: Math.max(0.1, pressInterval) };
@@ -639,7 +641,7 @@ export default function Lexicographer() {
       }
     }, 200);
     return () => clearInterval(id);
-  }, [pressMgrCount, totalLetters, pressUpgradeLevels, effectiveMaxLetters]);
+  }, [pressMgrOwned, totalLetters, pressUpgradeLevels, effectiveMaxLetters]);
 
   // --- MONKEY TIMER TICK (1 second) — pure state only ---
   useEffect(() => {
@@ -762,10 +764,12 @@ export default function Lexicographer() {
         .flatMap(l => (l.entries || []).map(e => e.word))
         .filter(w => !currentLexiconWords.has(w));
       localStorage.setItem('lexOfflineSnapshot', JSON.stringify({
-        wells: vs.wells || [], wellMgrCount: vs.wellMgrCount || 0,
+        wells: vs.wells || [],
+        wellMgrOwned: vs.wellMgrOwned || [],
         wellMgrEnabled: vs.wellMgrEnabled || [],
         wellUpgradeLevels: vs.wellUpgradeLevels || [],
-        presses: vs.presses || [], pressMgrCount: vs.pressMgrCount || 0,
+        presses: vs.presses || [],
+        pressMgrOwned: vs.pressMgrOwned || [],
         pressUpgradeLevels: vs.pressUpgradeLevels || [],
         totalLetters, effectiveInkMult: inkMult, effectiveMaxLetters: maxLett,
         monkeyTimers: vs.monkeyTimers || [], monkeySearchTime, findChance, availableMonkeyWords,
@@ -845,27 +849,25 @@ export default function Lexicographer() {
     showMsg(`Press ${pressCount + 1} built! (-${fmt(cost)} ink)`);
   };
 
-  const buyWellManager = () => {
-    if (wellMgrCount >= wellCount) { showMsg("Need another well first!"); return; }
-    if (wellMgrCount >= MAX_WELLS) { showMsg("All manager slots filled!"); return; }
-    const cost = WELL_MGR_COSTS[wellMgrCount];
+  const buyWellManager = (wellIdx) => {
+    if (wellMgrOwned[wellIdx]) { showMsg("Manager already hired!"); return; }
+    const cost = WELL_MGR_COSTS[wellIdx];
     if (collectedInk < cost) { showMsg(`Need ${fmt(cost)} ink! (have ${fmt(collectedInk)})`); return; }
     setCollectedInk(p => p - cost);
-    setWellMgrCount(p => p + 1);
-    setWellMgrEnabled(prev => [...prev, true]);
-    setMgrUpgradeLevels(prev => [...prev, mkMgrUpg()]);
-    const mgr = WELL_MANAGERS[wellMgrCount];
+    setWellMgrOwned(prev => { const next = [...prev]; next[wellIdx] = true; return next; });
+    setWellMgrEnabled(prev => { const next = [...prev]; next[wellIdx] = true; return next; });
+    setMgrUpgradeLevels(prev => { const next = [...prev]; next[wellIdx] = mkMgrUpg(); return next; });
+    const mgr = WELL_MANAGERS[wellIdx];
     showMsg(`Hired ${mgr.name}, ${mgr.title}! (-${fmt(cost)} ink)`);
   };
 
-  const buyPressManager = () => {
-    if (pressMgrCount >= pressCount) { showMsg("Need another press first!"); return; }
-    if (pressMgrCount >= MAX_PRESSES) { showMsg("All manager slots filled!"); return; }
-    const cost = PRESS_MGR_COSTS[pressMgrCount];
+  const buyPressManager = (pressIdx) => {
+    if (pressMgrOwned[pressIdx]) { showMsg("Manager already hired!"); return; }
+    const cost = PRESS_MGR_COSTS[pressIdx];
     if (collectedInk < cost) { showMsg(`Need ${fmt(cost)} ink! (have ${fmt(collectedInk)})`); return; }
     setCollectedInk(p => p - cost);
-    setPressMgrCount(p => p + 1);
-    const mgr = PRESS_MANAGERS[pressMgrCount];
+    setPressMgrOwned(prev => { const next = [...prev]; next[pressIdx] = true; return next; });
+    const mgr = PRESS_MANAGERS[pressIdx];
     showMsg(`Hired ${mgr.name}, ${mgr.title}! (-${fmt(cost)} ink)`);
   };
 
@@ -920,11 +922,11 @@ export default function Lexicographer() {
     setSpecialTiles([]);
     setWellCount(1);
     setWells([{ ink: 50, collecting: false, collectTimer: 10 }]);
-    setWellMgrCount(0);
+    setWellMgrOwned([]);
     setWellMgrEnabled([]);
     setPressCount(0);
     setPresses([]);
-    setPressMgrCount(0);
+    setPressMgrOwned([]);
     setRecentTiles([]);
     setPressEjects({});
     setWellUpgradeLevels([mkWellUpg()]);
@@ -1103,7 +1105,7 @@ export default function Lexicographer() {
         />}
 
         {activeTab==="inkwell" && <InkWellTab
-          wells={wells} wellCount={wellCount} wellMgrCount={wellMgrCount}
+          wells={wells} wellCount={wellCount} wellMgrOwned={wellMgrOwned}
           wellMgrEnabled={wellMgrEnabled} collectedInk={collectedInk}
           collectWell={collectWell} buyWell={buyWell} buyWellManager={buyWellManager}
           toggleWellManager={toggleWellManager}
@@ -1114,7 +1116,7 @@ export default function Lexicographer() {
         />}
 
         {activeTab==="press" && <LetterPressTab
-          presses={presses} pressCount={pressCount} pressMgrCount={pressMgrCount}
+          presses={presses} pressCount={pressCount} pressMgrOwned={pressMgrOwned}
           startPress={startPress} buyPress={buyPress} buyPressManager={buyPressManager}
           totalLetters={totalLetters} letters={letters} specialTiles={specialTiles}
           collectedInk={collectedInk} pressUpgradeLevels={pressUpgradeLevels}

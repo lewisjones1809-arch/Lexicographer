@@ -16,13 +16,13 @@ export const P = {
   borderLight: "#ede8e0",   // even softer
 
   // Semantic accent colours (all muted)
-  ink:   "#6b8fa8",   // dusty slate-blue — ink / water / Ink stat
+  ink:   "#1e3a52",   // dark navy ink — ink / water / Ink stat
   quill: "#a07840",   // muted warm amber — quills / currency
   sage:  "#6b9070",   // muted sage green — success / managers
   rose:  "#b06060",   // soft muted rose — errors / warnings
 
   // Buttons
-  btnActiveBg:     "#3d5a6e",
+  btnActiveBg:     "#162c3d",
   btnActiveText:   "#f5f2ec",
   btnInactiveBg:   "#ede8e0",
   btnInactiveText: "#7a6e62",
@@ -41,8 +41,15 @@ export const st = {
 export const GLOBAL_CSS = `
   input::placeholder { color:#b0a494; font-style:italic; letter-spacing:1px; font-size:14px; }
   * { box-sizing: border-box; }
-  html, body { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+  html, body { margin: 0; padding: 0; overflow-x: hidden; -webkit-text-size-adjust: 100%; background: #f0ece4; }
   button, [role="button"] { touch-action: manipulation; }
+  .lex-lexicon-outer { display: flex; flex-direction: column; }
+  .lex-form-col { flex: 1; min-width: 0; }
+  @media (min-width: 680px) {
+    .lex-lexicon-outer { flex-direction: row; align-items: flex-start; gap: 0; }
+    .lex-book-col { flex-shrink: 0; padding-right: 20px; border-right: 1px solid #e0d8cc; }
+    .lex-form-col { padding-left: 20px; }
+  }
   @media (max-width: 480px) {
     .lex-tab-btn { font-size: 10px !important; padding: 10px 2px !important; }
   }
