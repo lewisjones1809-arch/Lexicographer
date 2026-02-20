@@ -1001,7 +1001,7 @@ export default function Lexicographer() {
   };
 
   return (
-    <div style={{ color:P.textPrimary, fontFamily:"'Junicode', sans-serif", display:"flex", flexDirection:"column", height:"100%" }}>
+    <div style={{ color:P.textPrimary, fontFamily:"'Junicode', sans-serif", display:"flex", flexDirection:"column", flex:1, minHeight:0 }}>
 
       <div style={{ textAlign:"center", padding:"16px 16px 0", position:"relative", zIndex:1 }}>
         <h1 style={{ fontFamily:"'BLKCHCRY',serif", fontSize:26, fontWeight:700, letterSpacing:1, margin:0, color:P.textPrimary }}>Lexicographer</h1>

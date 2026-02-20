@@ -45,8 +45,8 @@ export function LetterTile({ letter, count, onClick, size=40, dimmed=false, tile
         fontFamily:"'Junicode',sans-serif", fontWeight:700,
       }}>{count}</span>}
 
-      {/* Score — inside tile, bottom-right (Scrabble style, normal tiles only) */}
-      {isNormal && score !== null && (
+      {/* Score — inside tile, bottom-right (Scrabble style, all non-lexicoin tiles) */}
+      {!isLexicoin && score !== null && (
         <span style={{
           position:"absolute",
           bottom: Math.round(size * 0.07), right: Math.round(size * 0.09),
@@ -54,25 +54,6 @@ export function LetterTile({ letter, count, onClick, size=40, dimmed=false, tile
           fontFamily:"'Junicode',sans-serif", lineHeight:1,
           color:textCol, opacity: dimmed ? 0.5 : 0.65,
         }}>{score}</span>
-      )}
-
-      {/* Score badge — outside tile, bottom-left (special tiles) */}
-      {isSpecial && !isLexicoin && score !== null && (
-        <span style={{
-          position:"absolute", bottom:-5, left:-5,
-          background:"#7a6e62", color:"#ffffff", borderRadius:3, padding:"1px 3px",
-          fontSize:7, fontWeight:700, fontFamily:"'Junicode',sans-serif", lineHeight:1.2,
-        }}>{score}</span>
-      )}
-
-      {/* Type badge — outside tile, bottom-centre (special tiles) */}
-      {isSpecial && tt.badge && (
-        <span style={{
-          position:"absolute", bottom:-6, left:"50%", transform:"translateX(-50%)",
-          background:tt.border, color:"#ffffff", borderRadius:3, padding:"1px 4px",
-          fontSize:7, fontWeight:700, fontFamily:"'Junicode',sans-serif",
-          whiteSpace:"nowrap", lineHeight:1.2,
-        }}>{tt.badge}</span>
       )}
     </div>
   );
