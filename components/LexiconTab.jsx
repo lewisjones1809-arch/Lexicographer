@@ -145,12 +145,11 @@ export function LexiconTab({
         {wordTiles.length > 0 && (
           <div style={{ fontSize:12, display:"flex", gap:8, flexWrap:"wrap", alignItems:"center", marginTop:6 }}>
             {previewScore ? (
-              <span style={{ color:P.quill, fontWeight:600, display:"inline-flex", alignItems:"center", gap:3 }}><Aperture size={12}/>{previewScore.total} Lexicoins{previewScore.wordMult > 1 ? ` (W×${previewScore.wordMult})` : ""}{previewScore.goldenCount > 0 ? " +★" : ""}</span>
+              <span style={{ color:P.quill, fontWeight:600, display:"inline-flex", alignItems:"center", gap:3 }}>
+                <Aperture size={12}/>{previewScore.total} Lexicoins{previewScore.goldenCount > 0 ? `, ${previewScore.goldenCount} Notebook${previewScore.goldenCount > 1 ? "s" : ""}` : ""}
+              </span>
             ) : word.length > 0 && (
               <span style={{ color:P.textSecondary, display:"inline-flex", alignItems:"center", gap:3 }}><Aperture size={12}/>{scoreWord(word)}</span>
-            )}
-            {previewScore && previewScore.details.length > 0 && (
-              <span style={{ fontSize:10, color:P.textMuted }}>[{previewScore.details.join(", ")}]</span>
             )}
             {alreadyInLexicon && <span style={{ color:P.rose, fontWeight:600 }}>— already in lexicon</span>}
             {word.length >= 3 && !alreadyInLexicon && !isValidWord(word) && <span style={{ color:P.rose, fontWeight:600 }}>— not a valid word</span>}
