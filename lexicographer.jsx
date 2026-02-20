@@ -858,6 +858,7 @@ export default function Lexicographer() {
     setWordTiles([]);
     advanceMissions("words_inscribed", 1);
     advanceMissions("long_word", 1, { wordLength: word.length });
+    advanceAchievement("unique_words_found", 1);
     const bonus = details.length > 0 ? ` [${details.join(", ")}]` : "";
     const goldenMsg = goldenCount > 0 ? ` +${goldenCount} 📓 Golden Notebook!` : "";
     showMsg(`"${word}" inscribed! (${total} Lexicoins${bonus}${goldenMsg}, cost ${fmt(inkCost)} ink)`);
@@ -875,6 +876,7 @@ export default function Lexicographer() {
     setPublishedLexicons(p=>[{ id:Date.now(), entries:[...lexicon], quillsEarned:publishBreakdown.total, date:new Date().toLocaleDateString(), coverId:activeCoverId, pageId:activePageId },...p]);
     setQuills(p=>p+publishBreakdown.total);
     advanceMissions("publish", 1);
+    advanceAchievement("lexicons_published", 1);
     setShowPublishPreview(false);
     setShowPublishAnim(true);
     setLexicon([]);

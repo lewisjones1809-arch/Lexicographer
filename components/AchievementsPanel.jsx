@@ -85,7 +85,7 @@ export function AchievementsPanel({ achievements, achievementProgress, achieveme
           </button>
         </div>
         <div style={{ ...st.sub, marginBottom: 20 }}>
-          Lifetime milestones — progress never resets.
+          Collect Achievements to earn rewards!
         </div>
 
         {achievements.map(a => {
@@ -125,6 +125,12 @@ export function AchievementsPanel({ achievements, achievementProgress, achieveme
           const currentLevel = a.levels[claimedCount];
           const pct          = Math.min(progress / currentLevel.threshold, 1) * 100;
           const isReady      = progress >= currentLevel.threshold;
+          const goalLabels   = {
+            ink:      n => `Collect ${fmt(n)} ink`,
+            words:    n => `Inscribe ${fmt(n)} unique words`,
+            lexicons: n => `Publish ${fmt(n)} lexicons`,
+          };
+          const goalText = (goalLabels[a.unit ?? "ink"])(currentLevel.threshold);
 
           return (
             <div key={a.id} style={{ ...st.panel, marginBottom: 12 }}>
@@ -139,6 +145,16 @@ export function AchievementsPanel({ achievements, achievementProgress, achieveme
                 {currentLevel.name}
               </div>
 
+              {/* Goal description */}
+              <div style={{
+                fontFamily: "'Courier Prime',monospace",
+                fontSize: 11,
+                color: P.textSecondary,
+                marginBottom: 4,
+              }}>
+                {goalText}
+              </div>
+
               {/* Level indicator */}
               <div style={{
                 fontFamily: "'Courier Prime',monospace",
@@ -149,31 +165,37 @@ export function AchievementsPanel({ achievements, achievementProgress, achieveme
                 Level {claimedCount + 1} / {a.levels.length}
               </div>
 
-              {/* Progress bar */}
+              {/* Progress bar with overlaid numbers */}
               <div style={{
-                height: 6,
+                position: "relative",
+                height: 20,
                 background: P.borderLight,
-                borderRadius: 3,
+                borderRadius: 4,
                 overflow: "hidden",
-                marginBottom: 6,
+                marginBottom: 12,
               }}>
                 <div style={{
                   height: "100%",
                   width: `${pct}%`,
                   background: isReady ? P.sage : P.ink,
-                  borderRadius: 3,
+                  borderRadius: 4,
                   transition: "width 0.3s ease",
                 }} />
-              </div>
-
-              {/* Progress numbers */}
-              <div style={{
-                fontFamily: "'Courier Prime',monospace",
-                fontSize: 10,
-                color: P.textMuted,
-                marginBottom: 12,
-              }}>
-                {fmt(progress)} / {fmt(currentLevel.threshold)} ink
+                <div style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: "'Courier Prime',monospace",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: "#fff",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.5)",
+                  pointerEvents: "none",
+                }}>
+                  {fmt(progress)} / {fmt(currentLevel.threshold)}
+                </div>
               </div>
 
               {/* Reward + claim row */}
