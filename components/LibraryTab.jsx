@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FeatherIcon as Feather } from "../assets/icons";
-import { st } from "../styles.js";
+import { P, st } from "../styles.js";
 import { COVERS, PAGE_STYLES } from "../constants.js";
 import { scoreWord, fmt } from "../gameUtils.js";
 import { BookView, MiniBookCover } from "./BookComponents.jsx";
