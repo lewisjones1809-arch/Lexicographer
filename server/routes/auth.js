@@ -94,6 +94,7 @@ router.post('/forgot-password', async (req, res) => {
       auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
     });
 
+    console.log('[forgot-password] sending email to:', user.email, '| host:', process.env.EMAIL_HOST, '| user:', process.env.EMAIL_USER);
     await transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: user.email,
@@ -101,8 +102,9 @@ router.post('/forgot-password', async (req, res) => {
       text: `Click the link below to reset your password (expires in 1 hour):\n\n${resetUrl}\n\nIf you didn't request this, you can safely ignore this email.`,
       html: `<p>Click the link below to reset your password (expires in 1 hour):</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>If you didn't request this, you can safely ignore this email.</p>`,
     });
+    console.log('[forgot-password] email sent successfully');
   } catch (err) {
-    console.error('Forgot-password error:', err.message);
+    console.error('[forgot-password] SMTP error:', err.message);
   }
 });
 
