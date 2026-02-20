@@ -715,8 +715,8 @@ export default function Lexicographer() {
     if(usedSpecialIds.size > 0) setSpecialTiles(prev => prev.filter(t => !usedSpecialIds.has(t.id)));
     const { total, goldenCount, details } = scoreWordWithTiles(assignments);
     if(goldenCount > 0) setGoldenNotebooks(p => p + goldenCount);
-    const letters = assignments.map(a => ({ letter: a.letter, type: a.type }));
-    setLexicon(p=>[...p,{ word, score: total, letters }]);
+    const letterEntries = assignments.map(a => ({ letter: a.letter, type: a.type }));
+    setLexicon(p=>[...p,{ word, score: total, letters: letterEntries }]);
     setWordTiles([]);
     advanceMissions("words_inscribed", 1);
     advanceMissions("long_word", 1, { wordLength: word.length });
