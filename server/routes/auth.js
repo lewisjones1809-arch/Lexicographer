@@ -78,6 +78,7 @@ router.post('/forgot-password', async (req, res) => {
 
   try {
     const user = getUserByEmail(email.toLowerCase());
+    console.log('[forgot-password] email:', email.toLowerCase(), '| user found:', !!user);
     if (!user) return;
 
     const token = crypto.randomBytes(32).toString('hex');
