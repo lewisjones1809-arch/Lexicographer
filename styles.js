@@ -47,8 +47,8 @@ export const GLOBAL_CSS = `
   .lex-form-col { flex: 1; min-width: 0; }
   @media (min-width: 680px) {
     .lex-lexicon-outer { flex-direction: row; align-items: flex-start; gap: 0; }
-    .lex-book-col { flex-shrink: 0; padding-right: 20px; border-right: 1px solid #e0d8cc; }
-    .lex-form-col { padding-left: 20px; }
+    .lex-book-col { flex: 1; min-width: 0; padding-right: 20px; border-right: 1px solid #e0d8cc; }
+    .lex-form-col { flex: 1; min-width: 0; padding-left: 20px; }
   }
   @media (max-width: 480px) {
     .lex-tab-btn { font-size: 10px !important; padding: 10px 2px !important; }
