@@ -1,0 +1,39 @@
+/* === GLOBAL RESETS === */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; }
+input::placeholder { color: #b0a494; font-style: italic; letter-spacing: 1px; font-size: 14px; }
+button, [role="button"] { touch-action: manipulation; }
+
+/* === APP SHELL === */
+/* #root is the flex column that fills the viewport — no height chain needed */
+#root {
+  height: 100vh;
+  overflow: hidden;
+  background: #f0ece4;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === TWO-COLUMN LAYOUT === */
+/* Default (narrow): stacked vertically, tab content scrolls */
+.lex-tab-content { flex: 1; overflow-y: auto; min-height: 0; }
+.lex-lexicon-outer { display: flex; flex-direction: column; }
+.lex-book-col { min-width: 0; }
+.lex-form-col { flex: 1; min-width: 0; }
+
+/* Wide (≥900px): side-by-side, both columns fill height and scroll independently */
+@media (min-width: 900px) {
+  .lex-tab-content { overflow: hidden; display: flex; flex-direction: column; }
+  .lex-tab-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .lex-lexicon-outer { flex-direction: row; align-items: stretch; flex: 1; min-height: 0; }
+  .lex-book-col { flex: 1; padding-right: 20px; border-right: 1px solid #e0d8cc; overflow-y: auto; }
+  .lex-form-col { flex: 1; padding-left: 20px; overflow-y: auto; }
+}
+
+/* === RESPONSIVE TWEAKS === */
+@media (max-width: 480px) {
+  .lex-tab-btn { font-size: 10px !important; padding: 10px 2px !important; }
+}
+@media (max-width: 340px) {
+  .lex-book-compact { transform: scale(0.82); transform-origin: top center; }
+}

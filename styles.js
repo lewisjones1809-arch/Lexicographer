@@ -36,28 +36,3 @@ export const st = {
   btn: (active) => ({ padding:"10px 20px", background:active?P.btnActiveBg:P.btnInactiveBg, color:active?P.btnActiveText:P.btnInactiveText, border:"none", borderRadius:6, cursor:active?"pointer":"default", fontFamily:"'BLKCHCRY',serif", fontSize:13, fontWeight:700, letterSpacing:0.5, boxShadow:active?"0 2px 8px rgba(61,90,110,0.18)":"none", transition:"all 0.2s" }),
 };
 
-// --- GLOBAL CSS ---
-// Injected via a <style> tag in the root component (fonts loaded via index.html <link>)
-export const GLOBAL_CSS = `
-  input::placeholder { color:#b0a494; font-style:italic; letter-spacing:1px; font-size:14px; }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; -webkit-text-size-adjust: 100%; background: #f0ece4; }
-  #root { height: 100%; }
-  button, [role="button"] { touch-action: manipulation; }
-  .lex-tab-content { overflow-y: auto; }
-  .lex-lexicon-outer { display: flex; flex-direction: column; }
-  .lex-form-col { flex: 1; min-width: 0; }
-  @media (min-width: 900px) {
-    .lex-tab-content { overflow: hidden; display: flex; flex-direction: column; }
-    .lex-tab-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-    .lex-lexicon-outer { flex-direction: row; align-items: stretch; gap: 0; flex: 1; min-height: 0; }
-    .lex-book-col { flex: 1; min-width: 0; padding-right: 20px; border-right: 1px solid #e0d8cc; overflow-y: auto; }
-    .lex-form-col { flex: 1; min-width: 0; padding-left: 20px; overflow-y: auto; }
-  }
-  @media (max-width: 480px) {
-    .lex-tab-btn { font-size: 10px !important; padding: 10px 2px !important; }
-  }
-  @media (max-width: 340px) {
-    .lex-book-compact { transform: scale(0.82); transform-origin: top center; }
-  }
-`;
