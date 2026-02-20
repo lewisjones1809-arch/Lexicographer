@@ -14,11 +14,13 @@ router.get('/state', requireAuth, (req, res) => {
 // PUT /api/user/state
 router.put('/state', requireAuth, (req, res) => {
   const { quills, goldenNotebooks, publishedLexicons, ownedCovers, ownedPages,
-          activeCoverId, activePageId, permUpgradeLevels, volatileState } = req.body;
+          activeCoverId, activePageId, permUpgradeLevels,
+          achievementProgress, achievementLevels, volatileState } = req.body;
   try {
     saveUserState(req.userId, {
       quills, goldenNotebooks, publishedLexicons, ownedCovers, ownedPages,
-      activeCoverId, activePageId, permUpgradeLevels, volatileState,
+      activeCoverId, activePageId, permUpgradeLevels,
+      achievementProgress, achievementLevels, volatileState,
     });
     res.json({ ok: true });
   } catch (err) {

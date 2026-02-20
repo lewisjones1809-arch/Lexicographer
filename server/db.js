@@ -48,6 +48,10 @@ try { db.exec('ALTER TABLE users ADD COLUMN reset_expires TEXT'); } catch {}
 // Full game state persistence column
 try { db.exec('ALTER TABLE user_state ADD COLUMN volatile_state TEXT DEFAULT NULL'); } catch {}
 
+// Achievement persistence columns
+try { db.exec("ALTER TABLE user_state ADD COLUMN achievement_progress TEXT DEFAULT '{}'"); } catch {}
+try { db.exec("ALTER TABLE user_state ADD COLUMN achievement_levels TEXT DEFAULT '{}'"); } catch {}
+
 // --- User helpers ---
 
 export function getUserByEmail(email) {
@@ -95,6 +99,8 @@ export function getUserState(userId) {
     activeCoverId: row.active_cover_id,
     activePageId: row.active_page_id,
     permUpgradeLevels: JSON.parse(row.perm_upgrade_levels),
+    achievementProgress: row.achievement_progress ? JSON.parse(row.achievement_progress) : {},
+    achievementLevels: row.achievement_levels ? JSON.parse(row.achievement_levels) : {},
     inkBoostPending: row.ink_boost_pending,
     letterPackPending: JSON.parse(row.letter_pack_pending),
     volatileState: row.volatile_state ? JSON.parse(row.volatile_state) : null,
@@ -112,6 +118,8 @@ export function saveUserState(userId, state) {
       active_cover_id = ?,
       active_page_id = ?,
       perm_upgrade_levels = ?,
+      achievement_progress = ?,
+      achievement_levels = ?,
       ink_boost_pending = ?,
       letter_pack_pending = ?,
       volatile_state = ?
@@ -125,6 +133,8 @@ export function saveUserState(userId, state) {
     state.activeCoverId ?? 'classic',
     state.activePageId ?? 'parchment',
     JSON.stringify(state.permUpgradeLevels ?? {}),
+    JSON.stringify(state.achievementProgress ?? {}),
+    JSON.stringify(state.achievementLevels ?? {}),
     state.inkBoostPending ? 1 : 0,
     JSON.stringify(state.letterPackPending ?? []),
     state.volatileState !== undefined ? JSON.stringify(state.volatileState) : null,

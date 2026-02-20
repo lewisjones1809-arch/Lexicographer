@@ -233,6 +233,13 @@ export function ShopTab({ quills, goldenNotebooks, ownedCovers, ownedPages, acti
       {/* Instant Boosts */}
       {shopTab === "boosts" && (
         <div style={st.panel}>
+          {/* TEST MODE NOTICE — remove before going live */}
+          <div style={{ marginBottom:14, padding:"10px 14px", background:"#fffbeb", border:"1px solid #f59e0b", borderRadius:8, fontSize:11, fontFamily:"'Courier Prime',monospace", color:"#92400e", lineHeight:1.6 }}>
+            <div style={{ fontWeight:700, marginBottom:4, fontSize:12 }}>⚠ TEST MODE — do not use a real card</div>
+            Use the following test card details when prompted:<br/>
+            <span style={{ fontWeight:700 }}>Card: 4242 4242 4242 4242</span> &nbsp;|&nbsp; <span style={{ fontWeight:700 }}>Expiry: 12/34</span> &nbsp;|&nbsp; <span style={{ fontWeight:700 }}>CVC: 123</span><br/>
+            Any name and billing address will work. No real payment will be taken.
+          </div>
           <div style={{ fontSize:14, fontFamily:"'Playfair Display',serif", color:P.textPrimary, fontWeight:700, letterSpacing:1, marginBottom:12 }}>BOOSTS & BUNDLES</div>
           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
             {IAP_PRODUCTS.map(product => {
