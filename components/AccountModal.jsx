@@ -3,7 +3,7 @@ import { P } from "../styles.js";
 import { fmt } from "../gameUtils.js";
 
 export function AccountModal({ currentUser, quills, goldenNotebooks, publishedLexicons, onClose }) {
-  const totalWords = publishedLexicons.reduce((sum, lex) => sum + (lex.words?.length ?? 0), 0);
+  const totalWords = publishedLexicons.reduce((sum, lex) => sum + (lex.entries?.length ?? 0), 0);
 
   const row = (icon, label, value) => (
     <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", borderBottom:`1px solid ${P.borderLight}` }}>

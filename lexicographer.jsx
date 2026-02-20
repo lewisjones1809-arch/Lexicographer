@@ -28,8 +28,11 @@ import { TUTORIAL_TAB_HINTS, TutorialWelcomeModal, TutorialCard } from "./compon
 import { OfflineRewardModal } from "./components/OfflineRewardModal.jsx";
 import { MissionsTrigger, MissionsPanel } from "./components/MissionsPanel.jsx";
 import { generateMissions, loadDailyMissions, saveDailyMissions, advanceProgress } from "./missions.js";
+import { AchievementsTrigger, AchievementsPanel } from "./components/AchievementsPanel.jsx";
+import { ACHIEVEMENTS, countClaimable } from "./achievements.js";
 import { AuthModal } from "./components/AuthModal.jsx";
 import { AccountModal } from "./components/AccountModal.jsx";
+import { StatsModal } from "./components/StatsModal.jsx";
 
 export default function Lexicographer() {
   const isTutorial = localStorage.getItem('lexTutorialDone') !== 'true';
@@ -113,6 +116,12 @@ export default function Lexicographer() {
     return (date === today && Array.isArray(saved) && saved.length > 0) ? saved : generateMissions();
   });
 
+  // Achievements (persistent across publish rounds — never reset)
+  const [achievementProgress, setAchievementProgress] = useState({});
+  const [achievementLevels, setAchievementLevels] = useState({});
+  const [showAchievements, setShowAchievements] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+
   // Tutorial
   const [tutorialStep, setTutorialStep] = useState(() =>
     localStorage.getItem('lexTutorialDone') === 'true' ? -1 : 0
@@ -151,6 +160,7 @@ export default function Lexicographer() {
     () => Math.pow(1.01, permUpgradeLevels["ink_multiplier"] || 0),
     [permUpgradeLevels]
   );
+  const claimableCount  = useMemo(() => countClaimable(achievementProgress, achievementLevels), [achievementProgress, achievementLevels]);
   const wordString      = useMemo(() => wordTiles.map(t => t.letter).join(""), [wordTiles]);
   const totalLetters    = useMemo(() => Object.values(letters).reduce((a,b)=>a+b,0) + specialTiles.length, [letters, specialTiles]);
   const inkCost         = useMemo(() => BASE_INK_COST + lexicon.length * INK_COST_SCALE, [lexicon.length]);
@@ -234,6 +244,27 @@ export default function Lexicographer() {
     });
   }, []);
 
+  const advanceAchievement = useCallback((id, amount) => {
+    setAchievementProgress(prev => ({ ...prev, [id]: (prev[id] ?? 0) + amount }));
+  }, []);
+
+  const claimAchievement = useCallback((id) => {
+    const achievement = ACHIEVEMENTS.find(a => a.id === id);
+    if (!achievement) return;
+    setAchievementLevels(prevLevels => {
+      const claimedCount = prevLevels[id] ?? 0;
+      if (claimedCount >= achievement.levels.length) return prevLevels;
+      setAchievementProgress(prevProgress => {
+        const progress = prevProgress[id] ?? 0;
+        const level = achievement.levels[claimedCount];
+        if (progress < level.threshold) return prevProgress;
+        setGoldenNotebooks(n => n + level.reward);
+        return prevProgress;
+      });
+      return { ...prevLevels, [id]: claimedCount + 1 };
+    });
+  }, []);
+
   const completeTutorial = useCallback(() => {
     localStorage.setItem('lexTutorialDone', 'true');
     setTutorialStep(-1);
@@ -258,6 +289,8 @@ export default function Lexicographer() {
     setActiveCoverId(state.activeCoverId ?? 'classic');
     setActivePageId(state.activePageId ?? 'parchment');
     setPermUpgradeLevels(state.permUpgradeLevels ?? {});
+    setAchievementProgress(state.achievementProgress ?? {});
+    setAchievementLevels(state.achievementLevels ?? {});
     const vs = state.volatileState;
 
     // Compute offline gains using server-restored volatile state + elapsed from mount ref.
@@ -321,6 +354,7 @@ export default function Lexicographer() {
     syncStateRef.current = {
       quills, goldenNotebooks, publishedLexicons, ownedCovers, ownedPages,
       activeCoverId, activePageId, permUpgradeLevels,
+      achievementProgress, achievementLevels,
       volatileState: {
         collectedInk, letters, wordTiles, lexicon,
         wellCount, wells, wellMgrCount, wellMgrEnabled,
@@ -330,8 +364,8 @@ export default function Lexicographer() {
       },
     };
   }, [quills, goldenNotebooks, publishedLexicons, ownedCovers, ownedPages,
-      activeCoverId, activePageId, permUpgradeLevels, collectedInk, letters,
-      wordTiles, lexicon, wellCount, wells, wellMgrCount, wellMgrEnabled,
+      activeCoverId, activePageId, permUpgradeLevels, achievementProgress, achievementLevels,
+      collectedInk, letters, wordTiles, lexicon, wellCount, wells, wellMgrCount, wellMgrEnabled,
       pressCount, presses, pressMgrCount, specialTiles,
       wellUpgradeLevels, mgrUpgradeLevels, pressUpgradeLevels, monkeyTimers]);
 
@@ -418,7 +452,8 @@ export default function Lexicographer() {
     syncTimerRef.current = setTimeout(doSync, 2000);
     return () => clearTimeout(syncTimerRef.current);
   }, [quills, goldenNotebooks, publishedLexicons, ownedCovers, ownedPages,
-      activeCoverId, activePageId, permUpgradeLevels, currentUser, doSync]); // eslint-disable-line react-hooks/exhaustive-deps
+      activeCoverId, activePageId, permUpgradeLevels, achievementProgress, achievementLevels,
+      currentUser, doSync]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogin = useCallback(async (user, token) => {
     setCurrentUser({ ...user, token });
@@ -499,7 +534,7 @@ export default function Lexicographer() {
           }
           return { ...w, ink: newInk };
         });
-        if (earned > 0) { setCollectedInk(p => p + earned); advanceMissions("ink_collected", earned); }
+        if (earned > 0) { setCollectedInk(p => p + earned); advanceMissions("ink_collected", earned); advanceAchievement("ink_collected", earned); }
         if (critTotal > 0) { setCritPopup({ ink: critTotal }); setCritKey(k => k + 1); }
         return next;
       });
@@ -733,6 +768,7 @@ export default function Lexicographer() {
       const result = rollCrit(w.ink, critChance, critMult);
       setCollectedInk(p => p + result.amount);
       advanceMissions("ink_collected", result.amount);
+      advanceAchievement("ink_collected", result.amount);
       if (result.isCrit) {
         setCritPopup({ ink: result.amount, wellIdx: idx });
         setCritKey(k => k + 1);
@@ -946,13 +982,17 @@ export default function Lexicographer() {
           </div>
         ))}
         <div style={{ position:"absolute", right:16, top:"50%", transform:"translateY(-50%)", display:"flex", alignItems:"center", gap:8, zIndex:50 }}>
-          <MissionsTrigger onClick={() => setShowMissions(true)} hasUnclaimed={missions.some(m => !m.claimed)} />
+          <AchievementsTrigger onClick={() => setShowAchievements(true)} claimableCount={claimableCount} />
+          <MissionsTrigger onClick={() => setShowMissions(true)} unclaimedCount={missions.filter(m => m.progress >= m.target && !m.claimed).length} />
           <div data-settings-panel style={{ position:"relative" }}>
             <div onClick={() => setShowSettings(s => !s)} style={{ display:"flex", alignItems:"center", cursor:"pointer", color:P.textSecondary, opacity:showSettings?1:0.65, transition:"opacity 0.2s" }} title="Settings">
               <Settings size={18} strokeWidth={1.5}/>
             </div>
             {showSettings && (
               <div data-settings-panel style={{ position:"absolute", right:0, top:"calc(100% + 8px)", minWidth:130, background:"#fff", border:`1px solid ${P.border}`, borderRadius:6, overflow:"hidden", zIndex:200, boxShadow:"0 4px 16px rgba(0,0,0,0.18)" }}>
+                <div onClick={() => { setShowStats(true); setShowSettings(false); }} style={{ padding:"9px 14px", cursor:"pointer", fontSize:11, fontFamily:"'Courier Prime',monospace", color:P.textSecondary, borderBottom:`1px solid ${P.borderLight}` }}>
+                  Stats
+                </div>
                 <div onClick={() => { setShowDebug(d => !d); setShowSettings(false); }} style={{ padding:"9px 14px", cursor:"pointer", fontSize:11, fontFamily:"'Courier Prime',monospace", color:showDebug ? P.ink : P.textSecondary, borderBottom:`1px solid ${P.borderLight}` }}>
                   {showDebug ? "✓ " : ""}Debug
                 </div>
@@ -1055,6 +1095,27 @@ export default function Lexicographer() {
           publishedLexicons={publishedLexicons} quills={quills} goldenNotebooks={goldenNotebooks}
         />}
       </div>
+
+      {/* Achievements popup */}
+      {showAchievements && (
+        <AchievementsPanel
+          achievements={ACHIEVEMENTS}
+          achievementProgress={achievementProgress}
+          achievementLevels={achievementLevels}
+          onClaim={claimAchievement}
+          onClose={() => setShowAchievements(false)}
+        />
+      )}
+
+      {/* Stats modal */}
+      {showStats && (
+        <StatsModal
+          publishedLexicons={publishedLexicons}
+          achievementProgress={achievementProgress}
+          achievementLevels={achievementLevels}
+          onClose={() => setShowStats(false)}
+        />
+      )}
 
       {/* Daily missions popup */}
       {showMissions && (

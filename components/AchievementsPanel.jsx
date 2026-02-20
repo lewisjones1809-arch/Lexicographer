@@ -1,17 +1,8 @@
-import { Calendar, X, BookMarked } from "lucide-react";
+import { Trophy, X, BookMarked } from "lucide-react";
 import { P, st } from "../styles.js";
+import { fmt } from "../gameUtils.js";
 
-function getMidnightCountdown() {
-  const now = new Date();
-  const midnight = new Date(now);
-  midnight.setHours(24, 0, 0, 0);
-  const ms = midnight - now;
-  const h = Math.floor(ms / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  return `${h}h ${m}m`;
-}
-
-export function MissionsTrigger({ onClick, unclaimedCount }) {
+export function AchievementsTrigger({ onClick, claimableCount }) {
   return (
     <button
       onClick={onClick}
@@ -21,14 +12,14 @@ export function MissionsTrigger({ onClick, unclaimedCount }) {
         border: "none",
         cursor: "pointer",
         padding: 4,
-        color: unclaimedCount > 0 ? P.textPrimary : P.textSecondary,
+        color: claimableCount > 0 ? P.textPrimary : P.textSecondary,
         display: "flex",
         alignItems: "center",
       }}
-      title="Daily Missions"
+      title="Achievements"
     >
-      <Calendar size={20} />
-      {unclaimedCount > 0 && (
+      <Trophy size={20} />
+      {claimableCount > 0 && (
         <span style={{
           position: "absolute",
           top: 0,
@@ -47,14 +38,14 @@ export function MissionsTrigger({ onClick, unclaimedCount }) {
           color: "#fff",
           padding: "0 2px",
         }}>
-          {unclaimedCount}
+          {claimableCount}
         </span>
       )}
     </button>
   );
 }
 
-export function MissionsPanel({ missions, onClaim, onClose }) {
+export function AchievementsPanel({ achievements, achievementProgress, achievementLevels, onClaim, onClose }) {
   return (
     <div
       onClick={onClose}
@@ -79,11 +70,13 @@ export function MissionsPanel({ missions, onClaim, onClose }) {
           width: "100%",
           maxWidth: 380,
           boxShadow: "0 8px 40px rgba(44,36,32,0.28)",
+          maxHeight: "80vh",
+          overflowY: "auto",
         }}
       >
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 4 }}>
-          <div style={st.heading}>Daily Missions</div>
+          <div style={st.heading}>Achievements</div>
           <button
             onClick={onClose}
             style={{ background: "none", border: "none", cursor: "pointer", color: P.textMuted, padding: 2, lineHeight: 1 }}
@@ -92,32 +85,68 @@ export function MissionsPanel({ missions, onClaim, onClose }) {
           </button>
         </div>
         <div style={{ ...st.sub, marginBottom: 20 }}>
-          Resets in: {getMidnightCountdown()}
+          Lifetime milestones — progress never resets.
         </div>
 
-        {/* Mission cards */}
-        {missions.map(m => {
-          const pct = Math.min(100, Math.round((m.progress / m.target) * 100));
-          const isComplete = m.progress >= m.target;
+        {achievements.map(a => {
+          const claimedCount = achievementLevels[a.id] ?? 0;
+          const progress     = achievementProgress[a.id] ?? 0;
+          const isMaxed      = claimedCount >= a.levels.length;
+
+          // Hidden achievements: don't show until player has some progress or has claimed a level
+          if (a.visibility === "hidden" && claimedCount === 0 && progress < a.levels[0].threshold) {
+            return null;
+          }
+
+          if (isMaxed) {
+            return (
+              <div key={a.id} style={{ ...st.panel, marginBottom: 12, opacity: 0.6 }}>
+                <div style={{
+                  fontFamily: "'Playfair Display',serif",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: P.textPrimary,
+                  marginBottom: 6,
+                }}>
+                  {a.levels[a.levels.length - 1].name}
+                </div>
+                <div style={{
+                  fontFamily: "'Courier Prime',monospace",
+                  fontSize: 11,
+                  color: P.sage,
+                  fontWeight: 700,
+                }}>
+                  ✓ All levels claimed
+                </div>
+              </div>
+            );
+          }
+
+          const currentLevel = a.levels[claimedCount];
+          const pct          = Math.min(progress / currentLevel.threshold, 1) * 100;
+          const isReady      = progress >= currentLevel.threshold;
+
           return (
-            <div key={m.id} style={{ ...st.panel, marginBottom: 12 }}>
+            <div key={a.id} style={{ ...st.panel, marginBottom: 12 }}>
+              {/* Level name */}
               <div style={{
                 fontFamily: "'Playfair Display',serif",
                 fontSize: 14,
                 fontWeight: 700,
                 color: P.textPrimary,
-                marginBottom: 4,
+                marginBottom: 2,
               }}>
-                {missionTitle(m)}
+                {currentLevel.name}
               </div>
+
+              {/* Level indicator */}
               <div style={{
                 fontFamily: "'Courier Prime',monospace",
-                fontSize: 11,
-                color: P.textSecondary,
-                marginBottom: 10,
-                lineHeight: 1.5,
+                fontSize: 10,
+                color: P.textMuted,
+                marginBottom: 8,
               }}>
-                {m.desc}
+                Level {claimedCount + 1} / {a.levels.length}
               </div>
 
               {/* Progress bar */}
@@ -131,18 +160,20 @@ export function MissionsPanel({ missions, onClaim, onClose }) {
                 <div style={{
                   height: "100%",
                   width: `${pct}%`,
-                  background: isComplete ? P.sage : P.ink,
+                  background: isReady ? P.sage : P.ink,
                   borderRadius: 3,
                   transition: "width 0.3s ease",
                 }} />
               </div>
+
+              {/* Progress numbers */}
               <div style={{
                 fontFamily: "'Courier Prime',monospace",
                 fontSize: 10,
                 color: P.textMuted,
                 marginBottom: 12,
               }}>
-                {m.progress} / {m.target}
+                {fmt(progress)} / {fmt(currentLevel.threshold)} ink
               </div>
 
               {/* Reward + claim row */}
@@ -156,29 +187,18 @@ export function MissionsPanel({ missions, onClaim, onClose }) {
                   color: P.quill,
                 }}>
                   <BookMarked size={13} />
-                  {m.reward} notebook{m.reward !== 1 ? "s" : ""}
+                  {currentLevel.reward} notebook{currentLevel.reward !== 1 ? "s" : ""}
                 </div>
-                {m.claimed ? (
-                  <span style={{
-                    fontFamily: "'Courier Prime',monospace",
+                <button
+                  onClick={() => isReady && onClaim(a.id)}
+                  style={{
+                    ...st.btn(isReady),
+                    padding: "6px 14px",
                     fontSize: 11,
-                    color: P.sage,
-                    fontWeight: 700,
-                  }}>
-                    ✓ Claimed
-                  </span>
-                ) : (
-                  <button
-                    onClick={() => isComplete && onClaim(m.id)}
-                    style={{
-                      ...st.btn(isComplete),
-                      padding: "6px 14px",
-                      fontSize: 11,
-                    }}
-                  >
-                    Claim
-                  </button>
-                )}
+                  }}
+                >
+                  Claim
+                </button>
               </div>
             </div>
           );
@@ -186,15 +206,4 @@ export function MissionsPanel({ missions, onClaim, onClose }) {
       </div>
     </div>
   );
-}
-
-function missionTitle(m) {
-  switch (m.type) {
-    case "words_inscribed":   return `Inscribe ${m.target} Words`;
-    case "ink_collected":     return `Collect ${m.target} Ink`;
-    case "letters_collected": return `Collect ${m.target} Letters`;
-    case "long_word":         return `Write a ${m.minLength}+ Letter Word`;
-    case "publish":           return "Publish a Lexicon";
-    default:                  return m.desc;
-  }
 }
