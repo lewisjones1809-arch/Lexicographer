@@ -91,6 +91,7 @@ export default function Lexicographer() {
   const currentUserRef  = useRef(null);
   const suppressSyncRef = useRef(false); // suppressed while loading state from server
   const syncTimerRef    = useRef(null);
+  const syncStateRef    = useRef({});    // full state snapshot for sync/beforeunload
 
   // Book customization
   const [ownedCovers, setOwnedCovers] = useState(["classic"]);
@@ -249,10 +250,84 @@ export default function Lexicographer() {
     setActiveCoverId(state.activeCoverId ?? 'classic');
     setActivePageId(state.activePageId ?? 'parchment');
     setPermUpgradeLevels(state.permUpgradeLevels ?? {});
-    if (state.inkBoostPending) setCollectedInk(p => p + 5000);
-    if (state.letterPackPending?.length > 0) setSpecialTiles(prev => [...prev, ...state.letterPackPending]);
+    const vs = state.volatileState;
+    if (vs) {
+      // Returning user — restore full game state, fold in any pending rewards
+      setCollectedInk((vs.collectedInk ?? 0) + (state.inkBoostPending ? 5000 : 0));
+      setLetters(vs.letters ?? {});
+      setWordTiles(vs.wordTiles ?? []);
+      setLexicon(vs.lexicon ?? []);
+      setWellCount(vs.wellCount ?? 1);
+      setWells(vs.wells ?? [{ ink: 50, collecting: false, collectTimer: 10 }]);
+      setWellMgrCount(vs.wellMgrCount ?? 0);
+      setWellMgrEnabled(vs.wellMgrEnabled ?? []);
+      setPressCount(vs.pressCount ?? 0);
+      setPresses(vs.presses ?? []);
+      setPressMgrCount(vs.pressMgrCount ?? 0);
+      setSpecialTiles([...(vs.specialTiles ?? []), ...(state.letterPackPending ?? [])]);
+      setWellUpgradeLevels(vs.wellUpgradeLevels?.length ? vs.wellUpgradeLevels : [mkWellUpg()]);
+      setMgrUpgradeLevels(vs.mgrUpgradeLevels ?? []);
+      setPressUpgradeLevels(vs.pressUpgradeLevels ?? []);
+      setMonkeyTimers(vs.monkeyTimers ?? []);
+    } else {
+      // New user — no saved game state; keep current local state and apply any pending rewards
+      if (state.inkBoostPending) setCollectedInk(p => p + 5000);
+      if (state.letterPackPending?.length > 0) setSpecialTiles(prev => [...prev, ...state.letterPackPending]);
+    }
     // Unsuppress sync after React has flushed the batch
     setTimeout(() => { suppressSyncRef.current = false; }, 200);
+  }, []);
+
+  // --- SYNC STATE REF: keeps a full snapshot of all state for use in sync callbacks ---
+  useEffect(() => {
+    syncStateRef.current = {
+      quills, goldenNotebooks, publishedLexicons, ownedCovers, ownedPages,
+      activeCoverId, activePageId, permUpgradeLevels,
+      volatileState: {
+        collectedInk, letters, wordTiles, lexicon,
+        wellCount, wells, wellMgrCount, wellMgrEnabled,
+        pressCount, presses, pressMgrCount, specialTiles,
+        wellUpgradeLevels, mgrUpgradeLevels, pressUpgradeLevels,
+        monkeyTimers,
+      },
+    };
+  }, [quills, goldenNotebooks, publishedLexicons, ownedCovers, ownedPages,
+      activeCoverId, activePageId, permUpgradeLevels, collectedInk, letters,
+      wordTiles, lexicon, wellCount, wells, wellMgrCount, wellMgrEnabled,
+      pressCount, presses, pressMgrCount, specialTiles,
+      wellUpgradeLevels, mgrUpgradeLevels, pressUpgradeLevels, monkeyTimers]);
+
+  // Fire a PUT /api/user/state with the current full snapshot
+  const doSync = useCallback(() => {
+    const user = currentUserRef.current;
+    if (!user || suppressSyncRef.current) return;
+    fetch('/api/user/state', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` },
+      body: JSON.stringify(syncStateRef.current),
+    }).catch(() => {});
+  }, []);
+
+  // Periodic volatile-state sync every 30 seconds
+  useEffect(() => {
+    const id = setInterval(doSync, 30_000);
+    return () => clearInterval(id);
+  }, [doSync]);
+
+  // Sync on page close / tab switch away (keepalive lets the request outlive the page)
+  useEffect(() => {
+    const handler = () => {
+      const user = currentUserRef.current;
+      if (!user) return;
+      fetch('/api/user/state', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` },
+        body: JSON.stringify(syncStateRef.current),
+        keepalive: true,
+      });
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
   }, []);
 
   // --- AUTH: on-mount — verify stored token, load state, handle IAP return ---
@@ -297,21 +372,15 @@ export default function Lexicographer() {
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // --- AUTH: debounced sync of persistent state to server (2s after last change) ---
+  // --- AUTH: debounced sync on permanent state changes (2s after last change) ---
+  // Volatile state is picked up from syncStateRef.current at fire time — no need in deps.
   useEffect(() => {
     if (!currentUser || suppressSyncRef.current) return;
     if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
-    syncTimerRef.current = setTimeout(() => {
-      fetch('/api/user/state', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
-        body: JSON.stringify({ quills, goldenNotebooks, publishedLexicons, ownedCovers, ownedPages,
-          activeCoverId, activePageId, permUpgradeLevels }),
-      }).catch(() => {});
-    }, 2000);
+    syncTimerRef.current = setTimeout(doSync, 2000);
     return () => clearTimeout(syncTimerRef.current);
   }, [quills, goldenNotebooks, publishedLexicons, ownedCovers, ownedPages,
-      activeCoverId, activePageId, permUpgradeLevels, currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
+      activeCoverId, activePageId, permUpgradeLevels, currentUser, doSync]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogin = useCallback(async (user, token) => {
     setCurrentUser({ ...user, token });
@@ -332,10 +401,18 @@ export default function Lexicographer() {
   }, [applyServerState]);
 
   const handleLogout = useCallback(() => {
+    const user = currentUserRef.current;
+    if (user) {
+      fetch('/api/user/state', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` },
+        body: JSON.stringify(syncStateRef.current),
+        keepalive: true,
+      }).catch(() => {});
+    }
     localStorage.removeItem('lexToken');
-    setCurrentUser(null);
-    showMsg("Signed out.");
-  }, [showMsg]);
+    window.location.reload();
+  }, []);
 
   const handleBuyIap = useCallback(async (productId) => {
     if (!currentUserRef.current) { setShowAuthModal(true); return; }
