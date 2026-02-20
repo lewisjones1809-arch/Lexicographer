@@ -240,6 +240,7 @@ export default function Lexicographer() {
       const m = prev.find(m => m.id === id);
       if (!m || m.claimed || m.progress < m.target) return prev;
       setGoldenNotebooks(n => n + m.reward);
+      advanceAchievement("golden_notebooks_earned", m.reward);
       return prev.map(m2 => m2.id === id ? { ...m2, claimed: true } : m2);
     });
   }, []);
@@ -259,7 +260,7 @@ export default function Lexicographer() {
         const level = achievement.levels[claimedCount];
         if (progress < level.threshold) return prevProgress;
         setGoldenNotebooks(n => n + level.reward);
-        return prevProgress;
+        return { ...prevProgress, golden_notebooks_earned: (prevProgress.golden_notebooks_earned ?? 0) + level.reward };
       });
       return { ...prevLevels, [id]: claimedCount + 1 };
     });
@@ -604,6 +605,7 @@ export default function Lexicographer() {
     if (newTiles.length > 0) {
       setRecentTiles(prev => [...prev, ...newTiles].slice(-10));
       advanceMissions("letters_collected", newTiles.length);
+      advanceAchievement("letters_pressed", newTiles.length);
     }
     if (Object.keys(newEjectsMap).length > 0) setPressEjects(prev => ({ ...prev, ...newEjectsMap }));
   }, [presses, advanceMissions]);
@@ -850,7 +852,7 @@ export default function Lexicographer() {
     setLetters(newLetters);
     if(usedSpecialIds.size > 0) setSpecialTiles(prev => prev.filter(t => !usedSpecialIds.has(t.id)));
     const { total, goldenCount, details } = scoreWordWithTiles(assignments);
-    if(goldenCount > 0) setGoldenNotebooks(p => p + goldenCount);
+    if(goldenCount > 0) { setGoldenNotebooks(p => p + goldenCount); advanceAchievement("golden_notebooks_earned", goldenCount); }
     const letterEntries = assignments.map(a => ({ letter: a.letter, type: a.type }));
     setLexicon(p=>[...p,{ word, score: total, letters: letterEntries }]);
     setWordTiles([]);

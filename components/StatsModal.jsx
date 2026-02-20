@@ -1,12 +1,14 @@
-import { X, BarChart2, Droplet, Feather, BookOpen, Trophy, Star, CaseSensitive } from "lucide-react";
+import { X, BarChart2, Droplet, Feather, BookOpen, Trophy, Star, CaseSensitive, Keyboard, BookMarked } from "lucide-react";
 import { P } from "../styles.js";
 import { fmt } from "../gameUtils.js";
 
 export function StatsModal({ onClose, publishedLexicons, achievementProgress, achievementLevels }) {
-  const wordsPublished = publishedLexicons.reduce((s, p) => s + p.entries.length, 0);
-  const inkCollected   = achievementProgress.ink_collected ?? 0;
-  const quillsEarned   = publishedLexicons.reduce((s, p) => s + (p.quillsEarned ?? 0), 0);
-  const achClaimed     = Object.values(achievementLevels).reduce((s, v) => s + v, 0);
+  const uniqueWordsPublished = new Set(publishedLexicons.flatMap(p => p.entries.map(e => e.word))).size;
+  const inkCollected         = achievementProgress.ink_collected ?? 0;
+  const lettersPressed       = achievementProgress.letters_pressed ?? 0;
+  const goldenNotebooksEarned = achievementProgress.golden_notebooks_earned ?? 0;
+  const quillsEarned         = publishedLexicons.reduce((s, p) => s + (p.quillsEarned ?? 0), 0);
+  const achClaimed           = Object.values(achievementLevels).reduce((s, v) => s + v, 0);
 
   let bestWord = null, longestWord = null;
   for (const lex of publishedLexicons) {
@@ -53,13 +55,15 @@ export function StatsModal({ onClose, publishedLexicons, achievementProgress, ac
 
         {/* Stat rows */}
         <div>
-          {row(<BookOpen size={13}/>,       "Lexicons published",       publishedLexicons.length)}
-          {row(<BookOpen size={13}/>,       "Words published",           fmt(wordsPublished))}
-          {row(<Droplet size={13}/>,        "Ink collected (all time)",  fmt(inkCollected))}
-          {row(<Feather size={13}/>,        "Quills earned (all time)",  fmt(quillsEarned))}
-          {row(<Trophy size={13}/>,         "Achievements claimed",      achClaimed)}
-          {row(<Star size={13}/>,           "Best word score",           bestWord ? `${bestWord.word} (${fmt(bestWord.score)}q)` : "—")}
-          {row(<CaseSensitive size={13}/>,  "Longest word",              longestWord ?? "—")}
+          {row(<BookOpen size={13}/>,      "Lexicons published",              publishedLexicons.length)}
+          {row(<BookOpen size={13}/>,      "Unique words published",           fmt(uniqueWordsPublished))}
+          {row(<Keyboard size={13}/>,      "Letters pressed (all time)",       fmt(lettersPressed))}
+          {row(<Droplet size={13}/>,       "Ink collected (all time)",         fmt(inkCollected))}
+          {row(<Feather size={13}/>,       "Quills earned (all time)",         fmt(quillsEarned))}
+          {row(<BookMarked size={13}/>,    "Golden notebooks earned (all time)", fmt(goldenNotebooksEarned))}
+          {row(<Trophy size={13}/>,        "Achievements claimed",             achClaimed)}
+          {row(<Star size={13}/>,          "Best word score",                  bestWord ? `${bestWord.word} ◈ ${fmt(bestWord.score)}q` : "—")}
+          {row(<CaseSensitive size={13}/>, "Longest word",                     longestWord ?? "—")}
         </div>
       </div>
     </div>
