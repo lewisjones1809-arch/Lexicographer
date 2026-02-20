@@ -23,7 +23,7 @@ export function InkWellTab({
   const ownedMgrIndices = wellMgrOwned.reduce((acc, owned, i) => owned ? [...acc, i] : acc, []);
 
   return (
-    <div style={{ paddingTop:12, position:"relative" }}>
+    <div className="lex-tab-panel" style={{ paddingTop:12, position:"relative" }}>
       {/* Info button — top right */}
       <button onClick={() => setShowInfo(p => !p)} style={{
         position:"absolute", top:0, right:0,

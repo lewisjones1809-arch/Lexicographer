@@ -1001,8 +1001,8 @@ export default function Lexicographer() {
   };
 
   return (
-    <div style={{ background:P.appBg }}>
-    <div style={{ width:"100%", minHeight:"100vh", color:P.textPrimary, fontFamily:"'Junicode', sans-serif", display:"flex", flexDirection:"column" }}>
+    <div style={{ background:P.appBg, height:"100%" }}>
+    <div style={{ height:"100%", color:P.textPrimary, fontFamily:"'Junicode', sans-serif", display:"flex", flexDirection:"column" }}>
 
       <div style={{ textAlign:"center", padding:"16px 16px 0", position:"relative", zIndex:1 }}>
         <h1 style={{ fontFamily:"'BLKCHCRY',serif", fontSize:26, fontWeight:700, letterSpacing:1, margin:0, color:P.textPrimary }}>Lexicographer</h1>
@@ -1073,7 +1073,7 @@ export default function Lexicographer() {
         })}
       </div>
 
-      <div style={{ flex:1, padding:16, position:"relative", zIndex:1, overflowY:"auto" }}>
+      <div className="lex-tab-content" style={{ flex:1, padding:16, position:"relative", zIndex:1 }}>
         {showDebug && <DebugPanel
           collectedInk={collectedInk} setCollectedInk={setCollectedInk}
           letters={letters} setLetters={setLetters}
