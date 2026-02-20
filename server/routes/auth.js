@@ -78,7 +78,6 @@ router.post('/forgot-password', async (req, res) => {
 
   try {
     const user = getUserByEmail(email.toLowerCase());
-    console.log('[forgot-password] email:', email.toLowerCase(), '| user found:', !!user);
     if (!user) return;
 
     const token = crypto.randomBytes(32).toString('hex');
@@ -88,7 +87,6 @@ router.post('/forgot-password', async (req, res) => {
     const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}?reset=${token}`;
 
     const resend = new Resend(process.env.EMAIL_PASS);
-    console.log('[forgot-password] sending email to:', user.email);
     const { error: sendError } = await resend.emails.send({
       from: process.env.EMAIL_FROM,
       to: user.email,
@@ -97,7 +95,6 @@ router.post('/forgot-password', async (req, res) => {
       html: `<p>Click the link below to reset your password (expires in 1 hour):</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>If you didn't request this, you can safely ignore this email.</p>`,
     });
     if (sendError) throw new Error(sendError.message);
-    console.log('[forgot-password] email sent successfully');
   } catch (err) {
     console.error('[forgot-password] SMTP error:', err.message);
   }
