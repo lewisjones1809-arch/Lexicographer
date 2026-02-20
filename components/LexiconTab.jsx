@@ -36,7 +36,8 @@ export function LexiconTab({
 
   const letterEntries = Object.entries(letters).sort((a,b) => a[0].localeCompare(b[0]));
   const word = wordString.toUpperCase();
-  const valid = word.length >= 3 && isValidWord(word);
+  const alreadyInLexicon = word.length >= 3 && lexicon.some(e => e.word === word);
+  const valid = word.length >= 3 && !alreadyInLexicon && isValidWord(word);
 
   const boardResult = useMemo(
     () => wordTiles.length > 0 ? assignTilesFromBoard(wordTiles, letters, specialTiles) : null,
@@ -151,8 +152,9 @@ export function LexiconTab({
             {previewScore && previewScore.details.length > 0 && (
               <span style={{ fontSize:10, color:P.textMuted }}>[{previewScore.details.join(", ")}]</span>
             )}
-            {word.length >= 3 && !isValidWord(word) && <span style={{ color:P.rose, fontWeight:600 }}>— not a valid word</span>}
-            {word.length >= 3 && isValidWord(word) && <span style={{ color:P.sage }}>✓ valid</span>}
+            {alreadyInLexicon && <span style={{ color:P.rose, fontWeight:600 }}>— already in lexicon</span>}
+            {word.length >= 3 && !alreadyInLexicon && !isValidWord(word) && <span style={{ color:P.rose, fontWeight:600 }}>— not a valid word</span>}
+            {valid && <span style={{ color:P.sage }}>✓ valid</span>}
             {word.length >= 3 && !canAssign && <span style={{ color:P.rose }}>— missing letters</span>}
             {collectedInk < inkCost && <span style={{ color:P.rose }}>— not enough ink</span>}
           </div>
