@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { getUserByEmail, createUser, setResetToken, getUserByResetToken, clearResetToken, updatePassword } from '../db.js';
 
 const router = Router();
@@ -87,21 +87,16 @@ router.post('/forgot-password', async (req, res) => {
 
     const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}?reset=${token}`;
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT) || 587,
-      secure: process.env.EMAIL_PORT === '465',
-      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-    });
-
-    console.log('[forgot-password] sending email to:', user.email, '| host:', process.env.EMAIL_HOST, '| user:', process.env.EMAIL_USER);
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    const resend = new Resend(process.env.EMAIL_PASS);
+    console.log('[forgot-password] sending email to:', user.email);
+    const { error: sendError } = await resend.emails.send({
+      from: process.env.EMAIL_FROM,
       to: user.email,
       subject: 'Reset your Lexicographer password',
       text: `Click the link below to reset your password (expires in 1 hour):\n\n${resetUrl}\n\nIf you didn't request this, you can safely ignore this email.`,
       html: `<p>Click the link below to reset your password (expires in 1 hour):</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>If you didn't request this, you can safely ignore this email.</p>`,
     });
+    if (sendError) throw new Error(sendError.message);
     console.log('[forgot-password] email sent successfully');
   } catch (err) {
     console.error('[forgot-password] SMTP error:', err.message);
