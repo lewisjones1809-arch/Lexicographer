@@ -752,7 +752,8 @@ export default function Lexicographer() {
   };
 
   return (
-    <div style={{ minHeight:"100vh", background:P.appBg, color:P.textPrimary, fontFamily:"'Courier Prime', monospace", display:"flex", flexDirection:"column" }}>
+    <div style={{ background:P.appBg }}>
+    <div style={{ maxWidth:900, margin:"0 auto", width:"100%", minHeight:"100vh", color:P.textPrimary, fontFamily:"'Courier Prime', monospace", display:"flex", flexDirection:"column" }}>
 
       <div style={{ textAlign:"center", padding:"16px 16px 0", position:"relative", zIndex:1 }}>
         <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:700, letterSpacing:3, margin:0, color:P.textPrimary }}>LEXICOGRAPHER</h1>
@@ -801,7 +802,7 @@ export default function Lexicographer() {
         {TABS.map(tab => {
           const isHinted = tutorialActive && TUTORIAL_TAB_HINTS[tutorialStep] === tab.id && activeTab !== tab.id;
           return (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="lex-tab-btn" style={{
               flex:1, padding:"12px 4px", background:"none", border:"none",
               borderBottom: activeTab===tab.id ? `2px solid ${P.ink}` : "2px solid transparent",
               color: activeTab===tab.id ? P.textPrimary : isHinted ? P.ink : P.textMuted,
@@ -1014,6 +1015,7 @@ export default function Lexicographer() {
       )}
 
       <style>{CSS_ANIMATIONS}</style>
+    </div>
     </div>
   );
 }

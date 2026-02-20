@@ -37,7 +37,7 @@ export function BookView({ entries, cover, pageStyle, currentPage, setCurrentPag
 
   return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center" }}>
-      <div style={{
+      <div className={compact ? "lex-book-compact" : undefined} style={{
         width:bw, height:bh, borderRadius:"4px 12px 12px 4px", position:"relative", overflow:"hidden",
         background:cover.color, border:`2px solid ${cover.accent}50`,
         boxShadow:`4px 0 8px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.3)`,

@@ -55,4 +55,12 @@ export const CSS_ANIMATIONS = `
   @keyframes monkeyFail { 0%{opacity:0;transform:translateY(0)} 15%{opacity:0.8} 100%{opacity:0;transform:translateY(-36px)} }
   input::placeholder { color:#b0a494; font-style:italic; letter-spacing:1px; font-size:14px; }
   * { box-sizing: border-box; }
+  html, body { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+  button, [role="button"] { touch-action: manipulation; }
+  @media (max-width: 480px) {
+    .lex-tab-btn { font-size: 10px !important; padding: 10px 2px !important; }
+  }
+  @media (max-width: 340px) {
+    .lex-book-compact { transform: scale(0.82); transform-origin: top center; }
+  }
 `;
