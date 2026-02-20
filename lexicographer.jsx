@@ -207,12 +207,14 @@ export default function Lexicographer() {
         const tileLimit  = 1 + (permUpgradeLevels["monkey_tile_limit"]  || 0);
         const { score, letters } = applyMonkeyTileBonuses(word, tileChance, tileLimit);
         setLexicon(lex => lex.some(e => e.word === word) ? lex : [...lex, { word, score, letters }]);
-        setMonkeyAnims(a => [...a, { id: animId, type: "success", word, monkeyIdx }]);
+        if (activeTab === "lexicon") setMonkeyAnims(a => [...a, { id: animId, type: "success", word, monkeyIdx }]);
         return;
       }
     }
-    const fakeWord = generateNonWord();
-    setMonkeyAnims(a => [...a, { id: animId, type: "fail", word: fakeWord, monkeyIdx }]);
+    if (activeTab === "lexicon") {
+      const fakeWord = generateNonWord();
+      setMonkeyAnims(a => [...a, { id: animId, type: "fail", word: fakeWord, monkeyIdx }]);
+    }
   };
 
   const clearMonkeyAnim = useCallback((id) => {
