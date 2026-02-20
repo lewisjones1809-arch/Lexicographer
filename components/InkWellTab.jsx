@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Droplet, UserStar } from "lucide-react";
+import { DropletIcon as Droplet } from "../assets/icons";
+import { UserStar } from "lucide-react";
 import { P, st } from "../styles.js";
 import { WELL_UPGRADE_NAMES, MGR_UPGRADE_NAMES, WELL_COSTS, WELL_MGR_COSTS, WELL_MANAGERS, MAX_WELLS } from "../constants.js";
 import { fmt } from "../gameUtils.js";
@@ -11,7 +12,7 @@ export function InkWellTab({
   wells, wellCount, wellMgrCount, wellMgrEnabled,
   collectedInk, collectWell, buyWell, buyWellManager, toggleWellManager,
   wellUpgradeLevels, mgrUpgradeLevels, buyDeviceUpgrade,
-  critPopup, critKey, onCritEnd, tutorialStep, unlockedQtys, inkMult
+  wellRefs, tutorialStep, unlockedQtys, inkMult
 }) {
   const [qty, setQty] = useState(1);
   const [showInfo, setShowInfo] = useState(false);
@@ -25,7 +26,7 @@ export function InkWellTab({
       {/* Header */}
       <div style={{ textAlign:"center", marginBottom:16 }}>
         <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:8, marginBottom:2 }}>
-          <div style={{ ...st.heading, fontSize:22, marginBottom:0 }}>The Ink Wells</div>
+          <div style={{ ...st.heading, fontSize:22, marginBottom:0 }}>Ink Wells</div>
           <button onClick={() => setShowInfo(p => !p)} style={{
             width:22, height:22, borderRadius:"50%",
             border:`1.5px solid ${showInfo ? P.ink : P.border}`,
@@ -86,7 +87,7 @@ export function InkWellTab({
             <WellMiniCard key={idx} well={well} idx={idx}
               wUpg={wUpg} hasManager={hasManager} isEnabled={isEnabled}
               onCollect={collectWell} onToggleManager={toggleWellManager}
-              critPopup={critPopup} critKey={critKey} onCritEnd={onCritEnd} inkMult={inkMult} />
+              wellRef={el => { wellRefs.current[idx] = el; }} inkMult={inkMult} />
           );
         })}
       </div>

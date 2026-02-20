@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Droplet, CaseUpper, Feather, BookMarked, Aperture, Settings } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { DropletIcon as Droplet, CaseUpperIcon as CaseUpper, FeatherIcon as Feather, BookMarkedIcon as BookMarked, ApertureIcon as Aperture } from "./assets/icons";
+import { Settings } from "lucide-react";
 import { WORD_LIST } from "./wordList.js";
 import { UPGRADES_BY_NAME } from "./upgrades.js";
 import {
@@ -9,7 +11,7 @@ import {
   WELL_COSTS, PRESS_COSTS, WELL_MGR_COSTS, PRESS_MGR_COSTS,
   WELL_MANAGERS, PRESS_MANAGERS,
 } from "./constants.js";
-import { P, st, CSS_ANIMATIONS } from "./styles.js";
+import { P, st, GLOBAL_CSS } from "./styles.js";
 import {
   randomLetter, fmt, rollCrit, computeEffectiveTileProbs, rollTileType,
   assignTilesFromBoard, scoreWordWithTiles, calculateQuillsBreakdown,
@@ -30,6 +32,7 @@ import { MissionsTrigger, MissionsPanel } from "./components/MissionsPanel.jsx";
 import { generateMissions, loadDailyMissions, saveDailyMissions, advanceProgress } from "./missions.js";
 import { AchievementsTrigger, AchievementsPanel } from "./components/AchievementsPanel.jsx";
 import { ACHIEVEMENTS, countClaimable } from "./achievements.js";
+import { GameCanvas } from "./components/GameCanvas.jsx";
 import { AuthModal } from "./components/AuthModal.jsx";
 import { AccountModal } from "./components/AccountModal.jsx";
 import { StatsModal } from "./components/StatsModal.jsx";
@@ -53,8 +56,8 @@ export default function Lexicographer() {
   const [showPublishAnim, setShowPublishAnim] = useState(false);
   const [showPublishPreview, setShowPublishPreview] = useState(false);
   const [publishBreakdown, setPublishBreakdown] = useState(null);
-  const [critPopup, setCritPopup] = useState(null);
-  const [critKey, setCritKey] = useState(0);
+  const gameCanvasRef = useRef(null);
+  const wellRefsArr   = useRef([]);
   const [showDebug, setShowDebug] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -509,7 +512,6 @@ export default function Lexicographer() {
     const id = setInterval(() => {
       setWells(prev => {
         let earned = 0;
-        let critTotal = 0;
         const next = prev.map((w, i) => {
           const wUpg = wellUpgradeLevels[i] || mkWellUpg();
           const mUpg = mgrUpgradeLevels[i]  || mkMgrUpg();
@@ -524,7 +526,6 @@ export default function Lexicographer() {
               const base = w.ink;
               const result = rollCrit(base, critChance, critMult);
               earned += result.amount;
-              if (result.isCrit) critTotal += result.amount;
               return { ...w, collecting: false, collectTimer: Math.max(0.1, mgrCollectTime), ink: 0 };
             }
             return { ...w, collectTimer: w.collectTimer - 0.1 };
@@ -536,7 +537,6 @@ export default function Lexicographer() {
           return { ...w, ink: newInk };
         });
         if (earned > 0) { setCollectedInk(p => p + earned); advanceMissions("ink_collected", earned); advanceAchievement("ink_collected", earned); }
-        if (critTotal > 0) { setCritPopup({ ink: critTotal }); setCritKey(k => k + 1); }
         return next;
       });
     }, 100);
@@ -772,8 +772,11 @@ export default function Lexicographer() {
       advanceMissions("ink_collected", result.amount);
       advanceAchievement("ink_collected", result.amount);
       if (result.isCrit) {
-        setCritPopup({ ink: result.amount, wellIdx: idx });
-        setCritKey(k => k + 1);
+        const el = wellRefsArr.current[idx];
+        if (el) {
+          const r = el.getBoundingClientRect();
+          gameCanvasRef.current?.playCritBubble(r.left + r.width / 2, r.top, `★ Crit! +${fmt(result.amount)}`);
+        }
         showMsg(`★ Critical! +${fmt(result.amount)} ink from Well ${idx + 1}!`);
       } else {
         showMsg(`Collected ${fmt(result.amount)} ink from Well ${idx + 1}!`);
@@ -1013,22 +1016,35 @@ export default function Lexicographer() {
         </div>
       </div>
 
-      <div key={msgKey} style={{ textAlign:"center", padding:"5px 16px", minHeight:22, fontSize:12, color:P.ink, fontStyle:"italic", animation:message?"fadeMsg 2.5s ease forwards":"none" }}>{message}</div>
+      <div style={{ minHeight:22, textAlign:"center", padding:"5px 16px" }}>
+        <AnimatePresence mode="wait">
+          {message && (
+            <motion.div key={msgKey}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: [0, 1, 1, 0], y: [-4, 0, 0, 0] }}
+              transition={{ duration: 2.5, ease: "easeOut", times: [0, 0.15, 0.7, 1] }}
+              style={{ fontSize:12, color:P.ink, fontStyle:"italic" }}
+            >{message}</motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       <div style={{ display:"flex", margin:"0 16px", borderBottom:`1px solid ${P.border}`, position:"relative", zIndex:1 }}>
         {TABS.map(tab => {
           const isHinted = tutorialActive && TUTORIAL_TAB_HINTS[tutorialStep] === tab.id && activeTab !== tab.id;
           return (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="lex-tab-btn" style={{
-              flex:1, padding:"12px 4px", background:"none", border:"none",
-              borderBottom: activeTab===tab.id ? `2px solid ${P.ink}` : "2px solid transparent",
-              color: activeTab===tab.id ? P.textPrimary : isHinted ? P.ink : P.textMuted,
-              cursor:"pointer",
-              fontFamily:"'Playfair Display',serif", fontSize:12,
-              fontWeight: activeTab===tab.id ? 700 : isHinted ? 700 : 400,
-              transition:"all 0.2s",
-              animation: isHinted ? "tutorialPulse 1.4s ease infinite" : "none",
-            }}>{tab.label}</button>
+            <motion.button key={tab.id} onClick={() => setActiveTab(tab.id)} className="lex-tab-btn"
+              animate={isHinted ? { opacity: [1, 0.35, 1] } : { opacity: 1 }}
+              transition={isHinted ? { duration: 1.4, repeat: Infinity, ease: "easeInOut" } : {}}
+              style={{
+                flex:1, padding:"12px 4px", background:"none", border:"none",
+                borderBottom: activeTab===tab.id ? `2px solid ${P.ink}` : "2px solid transparent",
+                color: activeTab===tab.id ? P.textPrimary : isHinted ? P.ink : P.textMuted,
+                cursor:"pointer",
+                fontFamily:"'Playfair Display',serif", fontSize:12,
+                fontWeight: activeTab===tab.id ? 700 : isHinted ? 700 : 400,
+                transition:"all 0.2s",
+              }}>{tab.label}</motion.button>
           );
         })}
       </div>
@@ -1069,7 +1085,7 @@ export default function Lexicographer() {
           toggleWellManager={toggleWellManager}
           wellUpgradeLevels={wellUpgradeLevels} mgrUpgradeLevels={mgrUpgradeLevels}
           buyDeviceUpgrade={buyDeviceUpgrade}
-          critPopup={critPopup} critKey={critKey} onCritEnd={()=>setCritPopup(null)}
+          wellRefs={wellRefsArr}
           tutorialStep={tutorialStep} unlockedQtys={unlockedQtys} inkMult={effectiveInkMult}
         />}
 
@@ -1132,8 +1148,9 @@ export default function Lexicographer() {
 
       {/* Pre-publish confirmation popup */}
       {showPublishPreview && publishBreakdown && (
-        <div onClick={() => setShowPublishPreview(false)}
-          style={{ position:"fixed", inset:0, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(44,36,32,0.55)", zIndex:100, animation:"fadeIn 0.3s ease" }}>
+        <motion.div onClick={() => setShowPublishPreview(false)}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
+          style={{ position:"fixed", inset:0, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(44,36,32,0.55)", zIndex:100 }}>
           <div style={{ background:P.panelBg, border:`1px solid ${P.border}`, borderRadius:12, padding:"28px 28px", maxWidth:380, width:"90%", boxShadow:"0 8px 32px rgba(44,36,32,0.15)" }} onClick={e=>e.stopPropagation()}>
             <div style={{ textAlign:"center", fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, color:P.textPrimary, letterSpacing:1, marginBottom:4 }}>Publish Lexicon?</div>
             <div style={{ textAlign:"center", fontSize:11, color:P.textMuted, fontFamily:"'Courier Prime',monospace", marginBottom:18 }}>This will reset your current round.</div>
@@ -1168,33 +1185,39 @@ export default function Lexicographer() {
               <button onClick={confirmPublish} style={{ ...st.btn(true), flex:2 }}>Confirm Publish</button>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Publish breakdown overlay */}
       {showPublishAnim && publishBreakdown && (
-        <div onClick={()=>{setShowPublishAnim(false);setPublishBreakdown(null);showMsg(`Published! Earned ✦${fmt(publishBreakdown.total)} quills!`);}}
-          style={{ position:"fixed", inset:0, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(44,36,32,0.55)", zIndex:100, animation:"fadeIn 0.3s ease", cursor:"pointer" }}>
+        <motion.div onClick={()=>{setShowPublishAnim(false);setPublishBreakdown(null);showMsg(`Published! Earned ✦${fmt(publishBreakdown.total)} quills!`);}}
+          initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ duration:0.3 }}
+          style={{ position:"fixed", inset:0, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(44,36,32,0.55)", zIndex:100, cursor:"pointer" }}>
           <div style={{ background:P.panelBg, border:`1px solid ${P.border}`, borderRadius:12, padding:"28px 28px", maxWidth:380, width:"90%", boxShadow:"0 8px 32px rgba(44,36,32,0.15)" }}>
-            <div style={{ textAlign:"center", fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, color:P.textPrimary, letterSpacing:1, marginBottom:18, animation:"publishPop 0.5s ease forwards" }}>Lexicon Published</div>
+            <motion.div initial={{ opacity:0, scale:0.8 }} animate={{ opacity:1, scale:1 }} transition={{ duration:0.5 }}
+              style={{ textAlign:"center", fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, color:P.textPrimary, letterSpacing:1, marginBottom:18 }}>Lexicon Published</motion.div>
 
             <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:18 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", animation:"slideRow 0.4s ease both", animationDelay:"0.2s" }}>
+              <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.2 }}
+                style={{ display:"flex", justifyContent:"space-between" }}>
                 <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Courier Prime',monospace" }}>{publishBreakdown.wordCount} words × {publishBreakdown.A}</span>
                 <span style={{ fontSize:14, color:P.textPrimary, fontFamily:"'Playfair Display',serif", fontWeight:700 }}>{fmt(publishBreakdown.wordBonus)}</span>
-              </div>
-              <div style={{ display:"flex", justifyContent:"space-between", animation:"slideRow 0.4s ease both", animationDelay:"0.35s" }}>
+              </motion.div>
+              <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.35 }}
+                style={{ display:"flex", justifyContent:"space-between" }}>
                 <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Courier Prime',monospace", display:"inline-flex", alignItems:"center", gap:3 }}><Aperture size={11}/>{publishBreakdown.totalLexicoins} Lexicoins × {publishBreakdown.B}</span>
                 <span style={{ fontSize:14, color:P.textPrimary, fontFamily:"'Playfair Display',serif", fontWeight:700 }}>+{fmt(publishBreakdown.lexicoinBonus)}</span>
-              </div>
-              <div style={{ height:1, background:P.border, animation:"slideRow 0.4s ease both", animationDelay:"0.45s" }}/>
-              <div style={{ display:"flex", justifyContent:"space-between", animation:"slideRow 0.4s ease both", animationDelay:"0.5s" }}>
+              </motion.div>
+              <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.45 }}
+                style={{ height:1, background:P.border }}/>
+              <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.5 }}
+                style={{ display:"flex", justifyContent:"space-between" }}>
                 <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Courier Prime',monospace" }}>Base</span>
                 <span style={{ fontSize:15, color:P.textPrimary, fontFamily:"'Playfair Display',serif", fontWeight:700 }}>{fmt(publishBreakdown.base)}</span>
-              </div>
+              </motion.div>
 
               {publishBreakdown.top10.length > 0 && (
-                <div style={{ animation:"slideRow 0.4s ease both", animationDelay:"0.6s" }}>
+                <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.6 }}>
                   <div style={{ fontSize:11, color:P.textMuted, fontFamily:"'Courier Prime',monospace", marginBottom:4 }}>Top scoring words:</div>
                   <div style={{ display:"flex", flexWrap:"wrap", gap:3, marginBottom:4 }}>
                     {publishBreakdown.top10.map((item,i)=>(
@@ -1204,23 +1227,27 @@ export default function Lexicographer() {
                     ))}
                   </div>
                   <div style={{ fontSize:11, color:P.textMuted, fontFamily:"'Courier Prime',monospace", display:"flex", alignItems:"center", gap:2 }}><Aperture size={10}/>{fmt(publishBreakdown.top10Total)} → ×{publishBreakdown.highMult.toFixed(2)} word bonus</div>
-                </div>
+                </motion.div>
               )}
 
-              <div style={{ display:"flex", justifyContent:"space-between", animation:"slideRow 0.4s ease both", animationDelay:"0.75s" }}>
+              <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.75 }}
+                style={{ display:"flex", justifyContent:"space-between" }}>
                 <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Courier Prime',monospace" }}>Design bonus</span>
                 <span style={{ fontSize:14, color:P.textPrimary, fontFamily:"'Playfair Display',serif", fontWeight:700 }}>×{publishBreakdown.designMult.toFixed(2)}</span>
-              </div>
-              <div style={{ height:1, background:P.border, margin:"4px 0", animation:"slideRow 0.4s ease both", animationDelay:"0.85s" }}/>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", animation:"slideRow 0.4s ease both", animationDelay:"0.95s" }}>
+              </motion.div>
+              <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.85 }}
+                style={{ height:1, background:P.border, margin:"4px 0" }}/>
+              <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.95 }}
+                style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <span style={{ fontSize:13, color:P.textSecondary, fontFamily:"'Courier Prime',monospace" }}>Quills earned</span>
                 <span style={{ fontSize:28, color:P.quill, fontFamily:"'Playfair Display',serif", fontWeight:700, display:"inline-flex", alignItems:"center", gap:6 }}><Feather size={22}/> {fmt(publishBreakdown.total)}</span>
-              </div>
+              </motion.div>
             </div>
 
-            <div style={{ textAlign:"center", fontSize:10, color:P.textMuted, fontFamily:"'Courier Prime',monospace", animation:"slideRow 0.4s ease both", animationDelay:"1.1s" }}>tap anywhere to continue</div>
+            <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:1.1 }}
+              style={{ textAlign:"center", fontSize:10, color:P.textMuted, fontFamily:"'Courier Prime',monospace" }}>tap anywhere to continue</motion.div>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {showAccountModal && (
@@ -1257,7 +1284,8 @@ export default function Lexicographer() {
         />
       )}
 
-      <style>{CSS_ANIMATIONS}</style>
+      <style>{GLOBAL_CSS}</style>
+      <GameCanvas ref={gameCanvasRef} />
     </div>
     </div>
   );

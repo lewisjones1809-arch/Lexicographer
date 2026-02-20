@@ -1,4 +1,5 @@
-import { Aperture } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ApertureIcon as Aperture } from "../assets/icons";
 import { TILE_TYPES, UPGRADE_SHORT_NAMES } from "../constants.js";
 import { P, st } from "../styles.js";
 import { fmt } from "../gameUtils.js";
@@ -29,15 +30,14 @@ export function InfoRow({ label, value }) {
 }
 
 // --- WELL MINI CARD ---
-export function WellMiniCard({ well, idx, wUpg, hasManager, isEnabled, onCollect, onToggleManager, critPopup, critKey, onCritEnd, inkMult = 1 }) {
+export function WellMiniCard({ well, idx, wUpg, hasManager, isEnabled, onCollect, onToggleManager, wellRef, inkMult = 1 }) {
   const wellCapacity = UPGRADES_BY_NAME["Well Capacity"].valueFormula(wUpg["Well Capacity"] ?? 0);
   const wellFillRate = UPGRADES_BY_NAME["Well Speed"].valueFormula(wUpg["Well Speed"] ?? 0) * inkMult;
   const fp = Math.min(100, (well.ink / wellCapacity) * 100);
   const isCollecting = well.collecting;
-  const showCrit = critPopup?.wellIdx === idx;
 
   return (
-    <div style={{ width:100, flexShrink:0, position:"relative" }}>
+    <div ref={wellRef} style={{ width:100, flexShrink:0, position:"relative" }}>
       <div
         onClick={() => { if (!isCollecting) onCollect(idx); }}
         style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:6, cursor:isCollecting ? "default" : "pointer" }}
@@ -81,16 +81,6 @@ export function WellMiniCard({ well, idx, wUpg, hasManager, isEnabled, onCollect
           >{isEnabled ? "ON" : "OFF"}</button>
         )}
       </div>
-      {showCrit && (
-        <div key={critKey} onAnimationEnd={onCritEnd}
-          style={{ position:"absolute", bottom:"100%", left:"50%", transform:"translateX(-50%)",
-            marginBottom:4, background:P.quill, color:"#fff", borderRadius:6,
-            padding:"3px 8px", fontSize:10, fontFamily:"'Courier Prime',monospace",
-            fontWeight:700, whiteSpace:"nowrap", pointerEvents:"none",
-            animation:"critBubble 2s ease forwards", zIndex:10 }}>
-          ★ Crit! +{fmt(critPopup.ink)} ink!
-        </div>
-      )}
     </div>
   );
 }
@@ -113,13 +103,16 @@ export function PressMiniCard({ press, idx, pUpg, hasManager, onStart, eject, on
         </div>
 
         <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
-          <div style={{
-            width:52, height:52, borderRadius:8, background:lcTT.color,
-            display:"flex", alignItems:"center", justifyContent:"center",
-            border: press.running ? `2px solid ${P.ink}` : hasManager ? `2px solid ${P.sage}` : `1.5px solid ${lcTT.border}`,
-            boxShadow: press.running ? `0 0 8px ${P.ink}40` : "none",
-            animation: press.running ? "pressShake 1.2s ease infinite" : "none",
-          }}><Aperture size={24} strokeWidth={1.5} color={lcTT.text}/></div>
+          <motion.div
+            animate={press.running ? { rotate: [0, -0.4, 0.4, 0] } : { rotate: 0 }}
+            transition={press.running ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" } : {}}
+            style={{
+              width:52, height:52, borderRadius:8, background:lcTT.color,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              border: press.running ? `2px solid ${P.ink}` : hasManager ? `2px solid ${P.sage}` : `1.5px solid ${lcTT.border}`,
+              boxShadow: press.running ? `0 0 8px ${P.ink}40` : "none",
+            }}
+          ><Aperture size={24} strokeWidth={1.5} color={lcTT.text}/></motion.div>
           {press.running ? (<>
             <div style={{ width:64, height:4, borderRadius:2, background:P.borderLight, overflow:"hidden" }}>
               <div style={{ height:"100%", width:`${progress}%`, background:"linear-gradient(90deg, #527898, #6b8fa8)", borderRadius:2 }}/>
@@ -132,21 +125,29 @@ export function PressMiniCard({ press, idx, pUpg, hasManager, onStart, eject, on
       </div>
 
       {/* Eject animation */}
-      {eject && (
-        <div style={{ position:"absolute", top:20, left:"50%", transform:"translateX(-50%)", pointerEvents:"none", zIndex:10 }}>
-          <div key={eject.key} onAnimationEnd={() => onEjectEnd(idx)} style={{
-            width:44, height:44, borderRadius:5,
-            background: (TILE_TYPES[eject.tileType] || TILE_TYPES.normal).color,
-            border: `2px solid ${(TILE_TYPES[eject.tileType] || TILE_TYPES.normal).border}`,
-            display:"flex", alignItems:"center", justifyContent:"center",
-            fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700,
-            color: (TILE_TYPES[eject.tileType] || TILE_TYPES.normal).text,
-            animation:"tileEject 0.9s ease forwards",
-          }}>
-            {eject.tileType === "lexicoin" ? <Aperture size={18} /> : eject.letter}
+      <AnimatePresence>
+        {eject && (
+          <div style={{ position:"absolute", top:20, left:"50%", transform:"translateX(-50%)", pointerEvents:"none", zIndex:10 }}>
+            <motion.div
+              key={eject.key}
+              initial={{ y: 0, opacity: 1 }}
+              animate={{ y: [0, -54, -72], opacity: [1, 1, 0] }}
+              transition={{ duration: 0.9, ease: "easeOut", times: [0, 0.75, 1] }}
+              onAnimationComplete={() => onEjectEnd(idx)}
+              style={{
+                width:44, height:44, borderRadius:5,
+                background: (TILE_TYPES[eject.tileType] || TILE_TYPES.normal).color,
+                border: `2px solid ${(TILE_TYPES[eject.tileType] || TILE_TYPES.normal).border}`,
+                display:"flex", alignItems:"center", justifyContent:"center",
+                fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700,
+                color: (TILE_TYPES[eject.tileType] || TILE_TYPES.normal).text,
+              }}
+            >
+              {eject.tileType === "lexicoin" ? <Aperture size={18} /> : eject.letter}
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }

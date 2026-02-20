@@ -1,4 +1,5 @@
-import { X, Feather, Mail, BookOpen, Star } from "lucide-react";
+import { FeatherIcon as Feather } from "../assets/icons";
+import { X, Mail, BookOpen, Star } from "lucide-react";
 import { P } from "../styles.js";
 import { fmt } from "../gameUtils.js";
 

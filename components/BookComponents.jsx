@@ -1,4 +1,5 @@
-import { Feather, Aperture } from "lucide-react";
+import { motion } from "framer-motion";
+import { FeatherIcon as Feather, ApertureIcon as Aperture } from "../assets/icons";
 import { P } from "../styles.js";
 import { WORDS_PER_PAGE, TILE_TYPES } from "../constants.js";
 import { sortEntries, fmt } from "../gameUtils.js";
@@ -73,7 +74,7 @@ export function BookView({ entries, cover, pageStyle, currentPage, setCurrentPag
           <div style={{ flex:1, display:"flex", flexDirection:"column", gap:2 }}>
             {pageEntries.length === 0 && (
               <div style={{ fontStyle:"italic", fontSize:11, color:pageStyle.accent, opacity:0.5, padding:8, textAlign:"center" }}>
-                Empty lexicon
+                Inscribe a word to begin your Lexicon
               </div>
             )}
             {pageEntries.map((entry, wi) => {
@@ -81,11 +82,14 @@ export function BookView({ entries, cover, pageStyle, currentPage, setCurrentPag
               const py = compact ? 3 : 4;
               const tileLetters = entry.letters || entry.word.split("").map(l => ({ letter: l, type: "normal" }));
               return (
-                <div key={wi} style={{
-                  display:"flex", justifyContent:"space-between", alignItems:"center",
-                  padding:`${py}px 4px`, borderBottom:`1px solid ${pageStyle.accent}15`,
-                  animation:"wordFadeIn 0.3s ease both", animationDelay:`${wi * 0.03}s`,
-                }}>
+                <motion.div key={wi}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, ease: "easeOut", delay: wi * 0.03 }}
+                  style={{
+                    display:"flex", justifyContent:"space-between", alignItems:"center",
+                    padding:`${py}px 4px`, borderBottom:`1px solid ${pageStyle.accent}15`,
+                  }}>
                   <div style={{ display:"flex", gap:2, overflow:"hidden" }}>
                     {tileLetters.map((lt, i) => (
                       <BookTile key={i} letter={lt.letter} type={lt.type} size={tileSize} />
@@ -99,7 +103,7 @@ export function BookView({ entries, cover, pageStyle, currentPage, setCurrentPag
                       <Aperture size={8}/>{entry.score}
                     </span>
                   </span>
-                </div>
+                </motion.div>
               );
             })}
             {Array.from({ length: WORDS_PER_PAGE - pageEntries.length }).map((_, i) => (

@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
-import { Feather, Aperture, Keyboard } from "lucide-react";
+import { motion } from "framer-motion";
+import { FeatherIcon as Feather, ApertureIcon as Aperture } from "../assets/icons";
+import { Keyboard } from "lucide-react";
 import { P, st } from "../styles.js";
 import { fmt, assignTilesFromBoard, scoreWordWithTiles, scoreWord, getAvailableLetterCounts, calculateQuillsBreakdown } from "../gameUtils.js";
 import { BookView } from "./BookComponents.jsx";
@@ -74,17 +76,24 @@ export function LexiconTab({
           <div key={i} style={{ position:"relative", display:"flex", justifyContent:"center" }}>
             {/* Floating animations */}
             {(monkeyAnims || []).filter(a => a.monkeyIdx === i).map(anim => (
-              <div key={anim.id} style={{
-                position:"absolute", bottom:"100%", left:"50%",
-                transform:"translateX(-50%)",
-                animation: anim.type === "success"
-                  ? "monkeySuccess 2.5s ease-out forwards"
-                  : "monkeyFail 2s ease-out forwards",
-                fontSize:10, fontFamily:"'Courier Prime',monospace",
-                color: anim.type === "success" ? P.sage : P.rose,
-                pointerEvents:"none", whiteSpace:"nowrap", zIndex:10,
-              }}>
-                {anim.word.toUpperCase()}
+              <div key={anim.id} style={{ position:"absolute", bottom:"100%", left:"50%", transform:"translateX(-50%)", pointerEvents:"none", zIndex:10 }}>
+                <motion.div
+                  animate={anim.type === "success"
+                    ? { opacity: [0, 1, 0], x: [0, 35, 70], y: [0, -10, -20] }
+                    : { opacity: [0, 0.8, 0], y: [0, -18, -36] }
+                  }
+                  transition={anim.type === "success"
+                    ? { duration: 2.5, ease: "easeOut", times: [0, 0.15, 1] }
+                    : { duration: 2, ease: "easeOut", times: [0, 0.15, 1] }
+                  }
+                  style={{
+                    fontSize:10, fontFamily:"'Courier Prime',monospace",
+                    color: anim.type === "success" ? P.sage : P.rose,
+                    whiteSpace:"nowrap",
+                  }}
+                >
+                  {anim.word.toUpperCase()}
+                </motion.div>
               </div>
             ))}
             {/* Monkey card */}

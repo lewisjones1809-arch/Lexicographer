@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { CaseUpper, UserStar, Aperture } from "lucide-react";
+import { motion } from "framer-motion";
+import { CaseUpperIcon as CaseUpper, ApertureIcon as Aperture } from "../assets/icons";
+import { UserStar } from "lucide-react";
 import { P, st } from "../styles.js";
 import { PRESS_UPGRADE_NAMES, PRESS_COSTS, PRESS_MGR_COSTS, PRESS_MANAGERS, MAX_PRESSES, TILE_TYPES } from "../constants.js";
 import { fmt } from "../gameUtils.js";
@@ -102,15 +104,19 @@ export function LetterPressTab({
           <div style={{ display:"flex", justifyContent:"center", flexWrap:"wrap", gap:4, padding:"2px 0" }}>
             {recentTiles.map((tile, ti) => {
               const tt = TILE_TYPES[tile.tileType] || TILE_TYPES.normal;
+              const isNewest = ti === recentTiles.length - 1;
               return (
-                <div key={tile.id} style={{
-                  position:"relative", width:30, height:30, borderRadius:4,
-                  background:tt.color, border:`1.5px solid ${tt.border}`,
-                  display:"flex", alignItems:"center", justifyContent:"center",
-                  fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:700,
-                  color:tt.text, flexShrink:0,
-                  animation: ti === recentTiles.length - 1 ? "tileAppear 0.25s ease forwards" : "none",
-                }}>
+                <motion.div key={tile.id}
+                  initial={isNewest ? { scale: 0.5, opacity: 0 } : false}
+                  animate={isNewest ? { scale: 1, opacity: 1 } : false}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  style={{
+                    position:"relative", width:30, height:30, borderRadius:4,
+                    background:tt.color, border:`1.5px solid ${tt.border}`,
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:700,
+                    color:tt.text, flexShrink:0,
+                  }}>
                   {tile.tileType === "lexicoin" ? <Aperture size={11} /> : tile.letter}
                   {tile.tileType !== "normal" && tt.badge && (
                     <span style={{
@@ -120,7 +126,7 @@ export function LetterPressTab({
                       whiteSpace:"nowrap", lineHeight:1.4,
                     }}>{tt.badge}</span>
                   )}
-                </div>
+                </motion.div>
               );
             })}
           </div>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Feather } from "lucide-react";
+import { FeatherIcon as Feather } from "../assets/icons";
 import { P, st } from "../styles.js";
 import { COVERS, PAGE_STYLES } from "../constants.js";
 import { scoreWord, fmt } from "../gameUtils.js";

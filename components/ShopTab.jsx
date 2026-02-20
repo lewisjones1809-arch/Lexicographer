@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Feather, HandCoins, CaseUpper, Droplet, Keyboard, Brain, Zap, Lock, Sparkles, Layers, BookMarked } from "lucide-react";
+import { FeatherIcon as Feather, CaseUpperIcon as CaseUpper, DropletIcon as Droplet, BookMarkedIcon as BookMarked } from "../assets/icons";
+import { HandCoins, Keyboard, Brain, Zap, Lock, Sparkles, Layers } from "lucide-react";
 import { P, st } from "../styles.js";
 import { IAP_PRODUCTS } from "../constants.js";
 
@@ -55,7 +56,7 @@ export function ShopTab({ quills, goldenNotebooks, ownedCovers, ownedPages, acti
         <div style={st.heading}>Shop</div>
         <div style={{ fontSize:12, color:P.quill, fontFamily:"'Playfair Display',serif", fontWeight:700, display:"flex", alignItems:"center", gap:4 }}><Feather size={12}/> {fmt(quills)}</div>
       </div>
-      <div style={{ ...st.sub, marginBottom:12 }}>Spend quills to upgrade your lexicography</div>
+      <div style={{ ...st.sub, marginBottom:12 }}>Unlock permanent upgrades!</div>
 
       {/* Shop sub-tabs */}
       <div style={{ display:"flex", gap:4, marginBottom:16 }}>

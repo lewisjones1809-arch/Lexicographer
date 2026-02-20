@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Aperture } from "lucide-react";
+import { motion } from "framer-motion";
+import { ApertureIcon as Aperture } from "../assets/icons";
 import { TILE_TYPES, LETTER_SCORES } from "../constants.js";
 import { P } from "../styles.js";
 
@@ -210,7 +211,7 @@ export function WordBoard({ wordTiles, removeWordTile, reorderWordTiles, insertW
   const containerStyle = {
     minHeight: 64, border: "2px dashed rgba(139,115,85,0.3)", borderRadius: 8,
     padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 6,
-    alignItems: "center", background: "rgba(245,236,215,0.03)",
+    alignItems: "center", background: "rgba(245,236,215,0.03)", touchAction: "none",
   };
 
   const showPhantom = dropIdx !== null;
@@ -244,11 +245,12 @@ export function WordBoard({ wordTiles, removeWordTile, reorderWordTiles, insertW
         {visuals.map(item => {
           if (item.type === "phantom") {
             return (
-              <div key={item.key} style={{
-                width: 44, height: 44, borderRadius: 5, flexShrink: 0,
-                border: "2px dashed #6b8fa8", background: "rgba(107,143,168,0.08)",
-                animation: "phantomExpand 0.12s ease forwards",
-              }} />
+              <motion.div key={item.key}
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 44, opacity: 1 }}
+                transition={{ duration: 0.12, ease: "easeOut" }}
+                style={{ height: 44, borderRadius: 5, flexShrink: 0, border: "2px dashed #6b8fa8", background: "rgba(107,143,168,0.08)" }}
+              />
             );
           }
           const { tile, idx } = item;

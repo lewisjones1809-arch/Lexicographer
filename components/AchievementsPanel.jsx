@@ -1,4 +1,5 @@
-import { Trophy, X, BookMarked } from "lucide-react";
+import { BookMarkedIcon as BookMarked } from "../assets/icons";
+import { Trophy, X } from "lucide-react";
 import { P, st } from "../styles.js";
 import { fmt } from "../gameUtils.js";
 

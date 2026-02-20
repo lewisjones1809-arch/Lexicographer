@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { X, Feather, Eye, EyeOff } from "lucide-react";
+import { FeatherIcon as Feather } from "../assets/icons";
+import { X, Eye, EyeOff } from "lucide-react";
 import { P } from "../styles.js";
 
 export function AuthModal({ onLogin, onClose, resetToken = null }) {

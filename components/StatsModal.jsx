@@ -1,4 +1,5 @@
-import { X, BarChart2, Droplet, Feather, BookOpen, Trophy, Star, CaseSensitive, Keyboard, BookMarked, Aperture } from "lucide-react";
+import { DropletIcon as Droplet, FeatherIcon as Feather, BookMarkedIcon as BookMarked, ApertureIcon as Aperture } from "../assets/icons";
+import { X, BarChart2, BookOpen, Trophy, Star, CaseSensitive, Keyboard } from "lucide-react";
 import { P } from "../styles.js";
 import { fmt } from "../gameUtils.js";
 

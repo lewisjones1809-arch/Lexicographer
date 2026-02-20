@@ -1,4 +1,4 @@
-import { Droplet, CaseUpper } from "lucide-react";
+import { DropletIcon as Droplet, CaseUpperIcon as CaseUpper } from "../assets/icons";
 import { P, st } from "../styles.js";
 import { fmt } from "../gameUtils.js";
 
