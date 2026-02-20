@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Aperture } from "lucide-react";
 import { TILE_TYPES, LETTER_SCORES } from "../constants.js";
 import { P } from "../styles.js";
@@ -86,12 +86,95 @@ export function LexiconKeyboard({ onSelect }) {
   );
 }
 
-// --- WORD BOARD (drag-drop letter placement) ---
+// --- WORD BOARD (pointer-events drag for board reordering, HTML5 drop for inventory) ---
 export function WordBoard({ wordTiles, removeWordTile, reorderWordTiles, insertWordTile, clearWord }) {
   const [removingIds, setRemovingIds] = useState(new Set());
-  const [dragFromIdx, setDragFromIdx] = useState(null);
+  const [dragState, setDragState] = useState(null); // { fromIdx, letter, tileType, ghostX, ghostY }
+  const [isDragging, setIsDragging] = useState(false);
   const [dropIdx, setDropIdx] = useState(null);
 
+  // Refs to avoid stale closures in document event listeners
+  const dragStateRef  = useRef(null);
+  const dropIdxRef    = useRef(null);
+  const wordTilesRef  = useRef(wordTiles);
+  const boardRef      = useRef(null);
+
+  useEffect(() => { wordTilesRef.current = wordTiles; }, [wordTiles]);
+  // Keep refs in sync each render
+  dragStateRef.current = dragState;
+  dropIdxRef.current   = dropIdx;
+
+  // --- Pointer drag (board tile reorder, works on touch + mouse) ---
+  const handleTilePointerDown = (e, idx) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    const tile = wordTiles[idx];
+    const ds = {
+      fromIdx: idx,
+      letter: tile.letter,
+      tileType: tile.tileType || "normal",
+      ghostX: e.clientX,
+      ghostY: e.clientY,
+    };
+    dragStateRef.current = ds;
+    setDragState(ds);
+    setIsDragging(true);
+    setDropIdx(null);
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMove = (e) => {
+      const { clientX: x, clientY: y } = e;
+      setDragState(prev => prev ? { ...prev, ghostX: x, ghostY: y } : null);
+
+      // Hit-test board tiles via BoundingClientRect (unaffected by ghost element z-order)
+      const tiles = boardRef.current?.querySelectorAll('[data-tile-idx]');
+      let newDrop = null;
+      if (tiles?.length) {
+        for (const tile of tiles) {
+          const r = tile.getBoundingClientRect();
+          if (y >= r.top - 12 && y <= r.bottom + 12 && x >= r.left - 4 && x <= r.right + 4) {
+            const i = +tile.dataset.tileIdx;
+            newDrop = x < r.left + r.width / 2 ? i : i + 1;
+            break;
+          }
+        }
+      }
+      // Append-to-end if pointer is over the board container but no tile
+      if (newDrop === null && boardRef.current) {
+        const r = boardRef.current.getBoundingClientRect();
+        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom)
+          newDrop = wordTilesRef.current.length;
+      }
+      // Don't drop a tile onto itself
+      const from = dragStateRef.current?.fromIdx;
+      if (from != null && (newDrop === from || newDrop === from + 1)) newDrop = null;
+
+      dropIdxRef.current = newDrop;
+      setDropIdx(newDrop);
+    };
+
+    const handleUp = () => {
+      const ds = dragStateRef.current;
+      const di = dropIdxRef.current;
+      if (ds && di !== null) reorderWordTiles(ds.fromIdx, di);
+      dragStateRef.current = null;
+      setDragState(null);
+      setIsDragging(false);
+      setDropIdx(null);
+    };
+
+    document.addEventListener('pointermove', handleMove);
+    document.addEventListener('pointerup',   handleUp);
+    return () => {
+      document.removeEventListener('pointermove', handleMove);
+      document.removeEventListener('pointerup',   handleUp);
+    };
+  }, [isDragging]);
+
+  // --- Remove animation ---
   const handleRemove = (id) => {
     setRemovingIds(prev => new Set([...prev, id]));
     setTimeout(() => {
@@ -100,43 +183,27 @@ export function WordBoard({ wordTiles, removeWordTile, reorderWordTiles, insertW
     }, 220);
   };
 
-  const handleBoardDragStart = (e, idx) => {
-    setDragFromIdx(idx);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", JSON.stringify({ source: "board", idx }));
-  };
-  const handleDragEnd = () => { setDragFromIdx(null); setDropIdx(null); };
-
-  const handleTileDragOver = (e, idx) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const insertAt = e.clientX < rect.left + rect.width / 2 ? idx : idx + 1;
-    if (dragFromIdx !== null && (insertAt === dragFromIdx || insertAt === dragFromIdx + 1)) {
-      setDropIdx(null);
-    } else {
-      setDropIdx(insertAt);
-    }
-  };
-
+  // --- HTML5 drop handlers (inventory → board, desktop only) ---
   const handleContainerDragOver = (e) => {
     e.preventDefault();
     if (dropIdx === null) setDropIdx(wordTiles.length);
   };
-
   const handleContainerDragLeave = (e) => {
     if (!e.currentTarget.contains(e.relatedTarget)) setDropIdx(null);
   };
-
+  const handleTileDragOver = (e, idx) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDropIdx(e.clientX < rect.left + rect.width / 2 ? idx : idx + 1);
+  };
   const handleDrop = (e) => {
     e.preventDefault();
     const target = dropIdx !== null ? dropIdx : wordTiles.length;
     try {
       const data = JSON.parse(e.dataTransfer.getData("text/plain"));
-      if (data.source === "board") reorderWordTiles(data.idx, target);
-      else if (data.source === "inventory") insertWordTile(data.letter, data.tileType, target);
+      if (data.source === "inventory") insertWordTile(data.letter, data.tileType, target);
     } catch {}
-    setDragFromIdx(null);
     setDropIdx(null);
   };
 
@@ -155,7 +222,7 @@ export function WordBoard({ wordTiles, removeWordTile, reorderWordTiles, insertW
 
   if (wordTiles.length === 0 && !showPhantom) {
     return (
-      <div style={containerStyle}
+      <div ref={boardRef} style={containerStyle}
         onDragOver={e => { e.preventDefault(); setDropIdx(0); }}
         onDragLeave={handleContainerDragLeave}
         onDrop={handleDrop}
@@ -168,73 +235,99 @@ export function WordBoard({ wordTiles, removeWordTile, reorderWordTiles, insertW
   }
 
   return (
-    <div style={containerStyle}
-      onDragOver={handleContainerDragOver}
-      onDragLeave={handleContainerDragLeave}
-      onDrop={handleDrop}
-    >
-      {visuals.map(item => {
-        if (item.type === "phantom") {
+    <>
+      <div ref={boardRef} style={containerStyle}
+        onDragOver={handleContainerDragOver}
+        onDragLeave={handleContainerDragLeave}
+        onDrop={handleDrop}
+      >
+        {visuals.map(item => {
+          if (item.type === "phantom") {
+            return (
+              <div key={item.key} style={{
+                width: 44, height: 44, borderRadius: 5, flexShrink: 0,
+                border: "2px dashed #6b8fa8", background: "rgba(107,143,168,0.08)",
+                animation: "phantomExpand 0.12s ease forwards",
+              }} />
+            );
+          }
+          const { tile, idx } = item;
+          const removing = removingIds.has(tile.id);
+          const isDraggingThis = dragState?.fromIdx === idx;
+          const tt = TILE_TYPES[tile.tileType || "normal"] || TILE_TYPES.normal;
           return (
-            <div key={item.key} style={{
-              width: 44, height: 44, borderRadius: 5, flexShrink: 0,
-              border: "2px dashed #6b8fa8", background: "rgba(107,143,168,0.08)",
-              animation: "phantomExpand 0.12s ease forwards",
-            }} />
-          );
-        }
-        const { tile, idx } = item;
-        const removing = removingIds.has(tile.id);
-        const dragging = dragFromIdx === idx;
-        const tt = TILE_TYPES[tile.tileType || "normal"] || TILE_TYPES.normal;
-        return (
-          <div key={tile.id}
-            draggable={!removing}
-            onDragStart={e => handleBoardDragStart(e, idx)}
-            onDragEnd={handleDragEnd}
-            onDragOver={e => handleTileDragOver(e, idx)}
-            style={{ position: "relative", flexShrink: 0 }}
-          >
-            <div style={{
-              maxWidth: removing ? 0 : 50, overflow: "hidden",
-              opacity: removing ? 0 : dragging ? 0.3 : 1,
-              transition: "max-width 0.22s ease, opacity 0.22s ease",
-            }}>
+            <div key={tile.id}
+              data-tile-idx={idx}
+              onPointerDown={removing ? undefined : (e) => handleTilePointerDown(e, idx)}
+              onDragOver={(e) => handleTileDragOver(e, idx)}
+              style={{ position: "relative", flexShrink: 0, touchAction: "none" }}
+            >
               <div style={{
-                width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center",
-                background: tt.color, border: `2px solid ${tt.border}`,
-                borderRadius: 5, fontFamily: "'Playfair Display',serif", fontSize: 22,
-                fontWeight: 700, color: tt.text, userSelect: "none",
-                cursor: removing ? "default" : "grab",
-                boxShadow: "0 1px 4px rgba(44,36,32,0.10)",
+                maxWidth: removing ? 0 : 50, overflow: "hidden",
+                opacity: removing ? 0 : isDraggingThis ? 0.3 : 1,
+                transition: "max-width 0.22s ease, opacity 0.22s ease",
               }}>
-                {tile.tileType === "lexicoin" && tile.letter === null ? <Aperture size={18} /> : tile.letter}
+                <div style={{
+                  width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center",
+                  background: tt.color, border: `2px solid ${tt.border}`,
+                  borderRadius: 5, fontFamily: "'Playfair Display',serif", fontSize: 22,
+                  fontWeight: 700, color: tt.text, userSelect: "none",
+                  cursor: removing ? "default" : "grab",
+                  boxShadow: "0 1px 4px rgba(44,36,32,0.10)",
+                }}>
+                  {tile.tileType === "lexicoin" && tile.letter === null ? <Aperture size={18} /> : tile.letter}
+                </div>
               </div>
+              {!removing && tile.tileType !== "lexicoin" && tile.letter && LETTER_SCORES[tile.letter] !== undefined && (
+                <span style={{
+                  position: "absolute", bottom: -5, left: -5,
+                  background: "#7a6e62", color: "#ffffff", borderRadius: 3, padding: "1px 3px",
+                  fontSize: 7, fontWeight: 700, fontFamily: "'Courier Prime',monospace", lineHeight: 1.2, zIndex: 1,
+                }}>{LETTER_SCORES[tile.letter]}</span>
+              )}
+              {!removing && (
+                <button onClick={() => handleRemove(tile.id)} style={{
+                  position: "absolute", top: -7, right: -3, width: 18, height: 18,
+                  background: "#b0a494", border: "2px solid #e0d8cc", borderRadius: "50%",
+                  color: "#ffffff", fontSize: 10, fontWeight: 700, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  lineHeight: 1, padding: 0, zIndex: 1,
+                }}>×</button>
+              )}
             </div>
-            {!removing && tile.tileType !== "lexicoin" && tile.letter && LETTER_SCORES[tile.letter] !== undefined && (
-              <span style={{
-                position: "absolute", bottom: -5, left: -5,
-                background: "#7a6e62", color: "#ffffff", borderRadius: 3, padding: "1px 3px",
-                fontSize: 7, fontWeight: 700, fontFamily: "'Courier Prime',monospace", lineHeight: 1.2, zIndex: 1,
-              }}>{LETTER_SCORES[tile.letter]}</span>
-            )}
-            {!removing && (
-              <button onClick={() => handleRemove(tile.id)} style={{
-                position: "absolute", top: -7, right: -3, width: 18, height: 18,
-                background: "#b0a494", border: "2px solid #e0d8cc", borderRadius: "50%",
-                color: "#ffffff", fontSize: 10, fontWeight: 700, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                lineHeight: 1, padding: 0, zIndex: 1,
-              }}>×</button>
-            )}
+          );
+        })}
+        <button onClick={clearWord} style={{
+          marginLeft: 6, padding: "4px 10px", background: "none",
+          border: "1px solid rgba(139,115,85,0.25)", color: "#6b6050",
+          borderRadius: 4, cursor: "pointer", fontSize: 10, fontFamily: "'Courier Prime',monospace",
+        }}>clear</button>
+      </div>
+
+      {/* Floating ghost tile during pointer drag */}
+      {dragState && (
+        <div style={{
+          position: "fixed",
+          left: dragState.ghostX - 22,
+          top: dragState.ghostY - 22,
+          pointerEvents: "none",
+          zIndex: 1000,
+          opacity: 0.85,
+          transform: "scale(1.08)",
+        }}>
+          <div style={{
+            width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center",
+            background: (TILE_TYPES[dragState.tileType] || TILE_TYPES.normal).color,
+            border: `2px solid ${(TILE_TYPES[dragState.tileType] || TILE_TYPES.normal).border}`,
+            borderRadius: 5, fontFamily: "'Playfair Display',serif", fontSize: 22,
+            fontWeight: 700, color: (TILE_TYPES[dragState.tileType] || TILE_TYPES.normal).text,
+            boxShadow: "0 4px 12px rgba(44,36,32,0.25)",
+            cursor: "grabbing",
+          }}>
+            {dragState.tileType === "lexicoin" ? <Aperture size={18} /> : dragState.letter}
           </div>
-        );
-      })}
-      <button onClick={clearWord} style={{
-        marginLeft: 6, padding: "4px 10px", background: "none",
-        border: "1px solid rgba(139,115,85,0.25)", color: "#6b6050",
-        borderRadius: 4, cursor: "pointer", fontSize: 10, fontFamily: "'Courier Prime',monospace",
-      }}>clear</button>
-    </div>
+        </div>
+      )}
+    </>
   );
 }

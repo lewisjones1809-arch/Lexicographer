@@ -1,0 +1,10 @@
+{
+  "name": "Lexicographer",
+  "short_name": "Lexicographer",
+  "description": "A word-crafting idle game",
+  "display": "standalone",
+  "start_url": "/",
+  "background_color": "#f0ece4",
+  "theme_color": "#6b8fa8",
+  "icons": []
+}
