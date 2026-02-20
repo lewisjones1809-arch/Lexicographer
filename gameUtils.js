@@ -76,11 +76,21 @@ export function generateNonWord(maxAttempts = 20) {
 
 // --- NUMBER FORMATTING ---
 const FMT_SUFFIXES = [
+  // vigintillions (1e63–1e90)
+  [1e90,"NvVg"],[1e87,"OcVg"],[1e84,"SpVg"],[1e81,"SxVg"],
+  [1e78,"QiVg"],[1e75,"QaVg"],[1e72,"TVg" ],[1e69,"DVg" ],
+  [1e66,"UVg" ],[1e63,"Vg"  ],
+  // -decillions (1e33–1e60)
+  [1e60,"Nvd"],[1e57,"Ocd"],[1e54,"Spd"],[1e51,"Sxd"],
+  [1e48,"Qid"],[1e45,"Qad"],[1e42,"Td" ],[1e39,"Dd" ],
+  [1e36,"Ud" ],[1e33,"Dc" ],
+  // nonillion down to thousand
   [1e30,"N"],[1e27,"O"],[1e24,"S"],[1e21,"s"],
   [1e18,"Q"],[1e15,"q"],[1e12,"T"],[1e9,"B"],[1e6,"M"],[1e3,"K"],
 ];
 export function fmt(n) {
   const v = typeof n === "number" ? n : Number(n);
+  if (!isFinite(v)) return "∞";
   for (const [threshold, suffix] of FMT_SUFFIXES) {
     if (v >= threshold) return (v / threshold).toFixed(2) + suffix;
   }
