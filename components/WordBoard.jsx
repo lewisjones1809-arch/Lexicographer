@@ -7,41 +7,71 @@ import { P } from "../styles.js";
 // --- LETTER TILE ---
 export function LetterTile({ letter, count, onClick, size=40, dimmed=false, tileType="normal", draggable=false, onDragStart }) {
   const tt = TILE_TYPES[tileType] || TILE_TYPES.normal;
-  const isSpecial = tileType !== "normal";
-  const bg = dimmed ? "#ede8e0" : tt.color;
-  const border = dimmed ? "#e0d8cc" : tt.border;
-  const textColor = dimmed ? "#b0a494" : tt.text;
+  const isNormal   = tileType === "normal";
+  const isSpecial  = tileType !== "normal";
+  const isLexicoin = tileType === "lexicoin";
+  const score = (!isLexicoin && letter && LETTER_SCORES[letter] !== undefined) ? LETTER_SCORES[letter] : null;
+
+  // Normal tiles → Scrabble-style cream; special tiles → their own palette
+  const bg      = dimmed ? "#ede8e0" : (isNormal ? "#fdf8e4" : tt.color);
+  const bdr     = dimmed ? "#e0d8cc" : (isNormal ? "#c4b46a" : tt.border);
+  const textCol = dimmed ? "#b0a494" : (isNormal ? "#1a1008" : tt.text);
+
   return (
     <div onClick={dimmed ? undefined : onClick}
       draggable={draggable && !dimmed}
       onDragStart={draggable && !dimmed ? onDragStart : undefined}
       style={{
         width:size, height:size, display:"inline-flex", alignItems:"center", justifyContent:"center",
-        background:bg, border:`2px solid ${border}`, borderRadius:5,
-        cursor:dimmed?"default":(draggable?"grab":"pointer"), fontFamily:"'Junicode',serif", fontSize:size*0.45,
-        fontWeight:700, color:textColor, position:"relative", userSelect:"none",
-        boxShadow:dimmed?"none":"0 1px 4px rgba(44,36,32,0.10)", transition:"all 0.12s", opacity:dimmed?0.5:1
+        background:bg,
+        border: isNormal ? `1.5px solid ${bdr}` : `2px solid ${bdr}`,
+        borderRadius: isNormal ? Math.round(size * 0.16) : 5,
+        cursor:dimmed?"default":(draggable?"grab":"pointer"),
+        fontFamily:"'Junicode',serif", fontSize: size * (isNormal ? 0.5 : 0.45),
+        fontWeight:700, color:textCol, position:"relative", userSelect:"none",
+        boxShadow: dimmed ? "none" : (isNormal
+          ? "0 2px 5px rgba(44,36,32,0.2), inset 0 1px 0 rgba(255,255,255,0.65)"
+          : "0 1px 4px rgba(44,36,32,0.10)"),
+        transition:"all 0.12s", opacity:dimmed?0.5:1,
       }}>
-      {tileType === "lexicoin" ? <Aperture size={Math.round(size * 0.45)} /> : letter}
+      {isLexicoin ? <Aperture size={Math.round(size * 0.45)} /> : letter}
+
+      {/* Inventory count — top-right bubble */}
       {count > 0 && <span style={{
-        position:"absolute", top:-5, right:-5, background:dimmed?"#e0d8cc":(isSpecial?tt.border:"#7a6e62"),
+        position:"absolute", top:-5, right:-5,
+        background: dimmed ? "#e0d8cc" : (isSpecial ? tt.border : "#7a6e62"),
         color:"#ffffff", borderRadius:"50%", width:18, height:18, fontSize:10,
         display:"flex", alignItems:"center", justifyContent:"center",
-        fontFamily:"'Junicode',sans-serif", fontWeight:700
+        fontFamily:"'Junicode',sans-serif", fontWeight:700,
       }}>{count}</span>}
-      {tileType !== "lexicoin" && letter && LETTER_SCORES[letter] !== undefined && (
+
+      {/* Score — inside tile, bottom-right (Scrabble style, normal tiles only) */}
+      {isNormal && score !== null && (
+        <span style={{
+          position:"absolute",
+          bottom: Math.round(size * 0.07), right: Math.round(size * 0.09),
+          fontSize: Math.round(size * 0.25), fontWeight:700,
+          fontFamily:"'Junicode',sans-serif", lineHeight:1,
+          color:textCol, opacity: dimmed ? 0.5 : 0.65,
+        }}>{score}</span>
+      )}
+
+      {/* Score badge — outside tile, bottom-left (special tiles) */}
+      {isSpecial && !isLexicoin && score !== null && (
         <span style={{
           position:"absolute", bottom:-5, left:-5,
           background:"#7a6e62", color:"#ffffff", borderRadius:3, padding:"1px 3px",
-          fontSize:7, fontWeight:700, fontFamily:"'Junicode',sans-serif", lineHeight:1.2
-        }}>{LETTER_SCORES[letter]}</span>
+          fontSize:7, fontWeight:700, fontFamily:"'Junicode',sans-serif", lineHeight:1.2,
+        }}>{score}</span>
       )}
+
+      {/* Type badge — outside tile, bottom-centre (special tiles) */}
       {isSpecial && tt.badge && (
         <span style={{
           position:"absolute", bottom:-6, left:"50%", transform:"translateX(-50%)",
           background:tt.border, color:"#ffffff", borderRadius:3, padding:"1px 4px",
           fontSize:7, fontWeight:700, fontFamily:"'Junicode',sans-serif",
-          whiteSpace:"nowrap", lineHeight:1.2
+          whiteSpace:"nowrap", lineHeight:1.2,
         }}>{tt.badge}</span>
       )}
     </div>
