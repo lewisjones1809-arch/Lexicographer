@@ -37,12 +37,12 @@ export const PRESS_MANAGERS = [
 
 export const TILE_TYPES = {
   normal:        { label:"",   badge:"",    color:"#f5f2ec", border:"#d0c8bc", text:"#2c2420" },
-  double_letter: { label:"DL", badge:"×2",  color:"#e8f2fa", border:"#4a7a9a", text:"#4a7a9a" },
-  triple_letter: { label:"TL", badge:"×3",  color:"#f5e8e8", border:"#9a4040", text:"#9a4040" },
-  double_word:   { label:"DW", badge:"W×2", color:"#f5edd8", border:"#a07830", text:"#a07830" },
-  triple_word:   { label:"TW", badge:"W×3", color:"#ede8f5", border:"#6840a0", text:"#6840a0" },
-  golden:        { label:"★",  badge:"★",   color:"#f5f0d8", border:"#a08820", text:"#a08820" },
-  lexicoin:      { label:"LC", badge:null,  color:"#f0ece4", border:"#8a6030", text:"#8a6030" },
+  double_letter: { label:"DL", badge:"×2",  color:"#fce8e8", border:"#e8b8b8", text:"#9b2020" },
+  triple_letter: { label:"TL", badge:"×3",  color:"#fef0e0", border:"#e8c4a0", text:"#a04800" },
+  double_word:   { label:"DW", badge:"W×2", color:"#e8f0fc", border:"#b8c8e8", text:"#1a3a7a" },
+  triple_word:   { label:"TW", badge:"W×3", color:"#e8f5e8", border:"#b0d4b0", text:"#1a5c1a" },
+  golden:        { label:"★",  badge:"★",   color:"#fdf5d0", border:"#dcc878", text:"#7a5800" },
+  lexicoin:      { label:"LC", badge:null,  color:"#f0e8fc", border:"#ceb8e4", text:"#5c1a8c" },
 };
 
 export const COVERS = [

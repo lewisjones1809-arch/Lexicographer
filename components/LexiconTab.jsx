@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FeatherIcon as Feather, ApertureIcon as Aperture } from "../assets/icons";
+import { ApertureIcon as Aperture } from "../assets/icons";
 import { Keyboard } from "lucide-react";
 import { P, st } from "../styles.js";
-import { fmt, assignTilesFromBoard, scoreWordWithTiles, scoreWord, getAvailableLetterCounts, calculateQuillsBreakdown } from "../gameUtils.js";
+import { fmt, assignTilesFromBoard, scoreWordWithTiles, scoreWord, getAvailableLetterCounts } from "../gameUtils.js";
 import { BookView } from "./BookComponents.jsx";
 import { LetterTile, LexiconKeyboard, WordBoard } from "./WordBoard.jsx";
 
@@ -19,8 +19,8 @@ export function LexiconTab({
   addWordTile, addLexiconPlaceholder, assignLexiconLetter,
   removeWordTile, clearWord, reorderWordTiles,
   createWord, publishLexicon, isValidWord,
-  activeCover, activePageStyle, coverMult, pageMult, maxLetters, scalingA, scalingB,
-  monkeyCount, monkeyTimers, monkeyAnims, clearMonkeyAnim,
+  activeCover, activePageStyle, maxLetters,
+  monkeyCount, monkeyTimers, monkeyAnims, clearMonkeyAnim, volumeNumber,
 }) {
   const [bookPage, setBookPage] = useState(0);
   const [lexiconPickerOpen, setLexiconPickerOpen] = useState(false);
@@ -47,11 +47,6 @@ export function LexiconTab({
   );
   const hasPendingLexicoin = wordTiles.some(t => t.tileType === "lexicoin" && t.letter === null);
   const canAssign = boardResult !== null && !hasPendingLexicoin;
-
-  const breakdown = useMemo(
-    () => calculateQuillsBreakdown(lexicon, coverMult, pageMult, scalingA, scalingB),
-    [lexicon, coverMult, pageMult, scalingA, scalingB]
-  );
 
   const previewScore = valid && canAssign ? scoreWordWithTiles(boardResult.assignments) : null;
 
@@ -87,7 +82,7 @@ export function LexiconTab({
                     : { duration: 2, ease: "easeOut", times: [0, 0.15, 1] }
                   }
                   style={{
-                    fontSize:10, fontFamily:"'Courier Prime',monospace",
+                    fontSize:10, fontFamily:"'Junicode',sans-serif",
                     color: anim.type === "success" ? P.sage : P.rose,
                     whiteSpace:"nowrap",
                   }}
@@ -103,7 +98,7 @@ export function LexiconTab({
               display:"flex", flexDirection:"column", alignItems:"center", gap:2,
             }}>
               <Keyboard size={16} color={P.textSecondary} />
-              <div style={{ fontSize:8, fontFamily:"'Courier Prime',monospace", color:P.textMuted, letterSpacing:0.5 }}>
+              <div style={{ fontSize:8, fontFamily:"'Junicode',sans-serif", color:P.textMuted, letterSpacing:0.5 }}>
                 {formatMonkeyTimer(monkeyTimers ? (monkeyTimers[i] ?? 300) : 300)}
               </div>
             </div>
@@ -123,7 +118,7 @@ export function LexiconTab({
         {monkeyCount > 0 && monkeyColumn([0,1,2,3,4])}
         {/* Book */}
         <div style={{ flexShrink:0 }}>
-          <BookView entries={lexicon} cover={activeCover} pageStyle={activePageStyle} currentPage={bookPage} setCurrentPage={setBookPage} compact />
+          <BookView entries={lexicon} cover={activeCover} pageStyle={activePageStyle} currentPage={bookPage} setCurrentPage={setBookPage} compact volumeNumber={volumeNumber} onPublish={publishLexicon} />
         </div>
         {/* Right inner column: slots 10-14 */}
         {monkeyCount > 10 && monkeyColumn([10,11,12,13,14])}
@@ -135,7 +130,7 @@ export function LexiconTab({
       <div style={st.panel}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:10 }}>
           <div style={st.heading}>Create Word</div>
-          <div style={{ fontSize:12, color:P.ink, fontFamily:"'Courier Prime',monospace" }}>cost: {fmt(inkCost)} ink</div>
+          <div style={{ fontSize:12, color:P.ink, fontFamily:"'Junicode',sans-serif" }}>cost: {fmt(inkCost)} ink</div>
         </div>
         <WordBoard wordTiles={wordTiles} removeWordTile={removeWordTile} clearWord={clearWord}
           reorderWordTiles={reorderWordTiles}
@@ -173,7 +168,7 @@ export function LexiconTab({
       <div style={st.panel}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:10 }}>
           <div style={st.heading}>Your Letters</div>
-          <div style={{ fontSize:12, color:P.textMuted, fontFamily:"'Courier Prime',monospace" }}>{totalLetters}/{maxLetters}</div>
+          <div style={{ fontSize:12, color:P.textMuted, fontFamily:"'Junicode',sans-serif" }}>{totalLetters}/{maxLetters}</div>
         </div>
         <div style={{ display:"flex", flexWrap:"wrap", gap:8, minHeight:44 }}>
           {letterEntries.length === 0 && specialTiles.length === 0 ? (
@@ -220,12 +215,6 @@ export function LexiconTab({
         />
       )}
 
-      {/* Publish */}
-      <div style={{ display:"flex", justifyContent:"center" }}>
-        <button onClick={publishLexicon} disabled={lexicon.length===0} style={{ ...st.btn(lexicon.length>0), padding:"12px 28px", fontSize:14 }}>
-          <Feather size={13} style={{marginRight:5, verticalAlign:"middle"}}/> Publish ({breakdown.total} quills)
-        </button>
-      </div>
     </div>
   );
 }

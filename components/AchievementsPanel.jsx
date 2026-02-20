@@ -34,7 +34,7 @@ export function AchievementsTrigger({ onClick, claimableCount }) {
           alignItems: "center",
           justifyContent: "center",
           fontSize: 9,
-          fontFamily: "'Courier Prime',monospace",
+          fontFamily: "'Junicode',sans-serif",
           fontWeight: 700,
           color: "#fff",
           padding: "0 2px",
@@ -46,7 +46,82 @@ export function AchievementsTrigger({ onClick, claimableCount }) {
   );
 }
 
+const goalLabels = {
+  ink:              n => `Collect ${fmt(n)} ink`,
+  words:            n => `Inscribe ${fmt(n)} unique words`,
+  lexicons:         n => `Publish ${fmt(n)} lexicons`,
+  wildcard_letters: n => `Inscribe a ${n}-letter word using only wildcards`,
+};
+
+function ProgressBar({ progress, threshold }) {
+  const pct     = Math.min(progress / threshold, 1) * 100;
+  const isReady = progress >= threshold;
+  return (
+    <div style={{
+      position: "relative",
+      height: 20,
+      background: P.borderLight,
+      borderRadius: 4,
+      overflow: "hidden",
+      marginBottom: 12,
+    }}>
+      <div style={{
+        height: "100%",
+        width: `${pct}%`,
+        background: isReady ? P.sage : P.ink,
+        borderRadius: 4,
+        transition: "width 0.3s ease",
+      }} />
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "'Junicode',sans-serif",
+        fontSize: 10,
+        fontWeight: 700,
+        color: "#fff",
+        textShadow: "0 1px 2px rgba(0,0,0,0.5)",
+        pointerEvents: "none",
+      }}>
+        {fmt(progress)} / {fmt(threshold)}
+      </div>
+    </div>
+  );
+}
+
+function RewardClaimRow({ reward, isReady, onClaim }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 5,
+        fontFamily: "'Junicode',sans-serif",
+        fontSize: 11,
+        color: P.quill,
+      }}>
+        <BookMarked size={13} />
+        {reward} notebook{reward !== 1 ? "s" : ""}
+      </div>
+      <button
+        onClick={() => isReady && onClaim()}
+        style={{ ...st.btn(isReady), padding: "6px 14px", fontSize: 11 }}
+      >
+        Claim
+      </button>
+    </div>
+  );
+}
+
 export function AchievementsPanel({ achievements, achievementProgress, achievementLevels, onClaim, onClose }) {
+  const totalLevels    = achievements.reduce((s, a) => s + a.levels.length, 0);
+  const unlockedLevels = achievements.reduce((s, a) => s + Math.min(achievementLevels[a.id] ?? 0, a.levels.length), 0);
+
+  const visibleAchievements = achievements.filter(a => a.visibility !== "hidden" || (achievementLevels[a.id] ?? 0) > 0);
+  const hiddenAchievements  = achievements.filter(a => a.visibility === "hidden" && (achievementLevels[a.id] ?? 0) === 0);
+
   return (
     <div
       onClick={onClose}
@@ -77,7 +152,16 @@ export function AchievementsPanel({ achievements, achievementProgress, achieveme
       >
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 4 }}>
-          <div style={st.heading}>Achievements</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+            <div style={st.heading}>Achievements</div>
+            <div style={{
+              fontFamily: "'Junicode',sans-serif",
+              fontSize: 11,
+              color: P.textMuted,
+            }}>
+              {unlockedLevels} / {totalLevels}
+            </div>
+          </div>
           <button
             onClick={onClose}
             style={{ background: "none", border: "none", cursor: "pointer", color: P.textMuted, padding: 2, lineHeight: 1 }}
@@ -89,21 +173,17 @@ export function AchievementsPanel({ achievements, achievementProgress, achieveme
           Collect Achievements to earn rewards!
         </div>
 
-        {achievements.map(a => {
+        {/* Main achievements */}
+        {visibleAchievements.map(a => {
           const claimedCount = achievementLevels[a.id] ?? 0;
           const progress     = achievementProgress[a.id] ?? 0;
           const isMaxed      = claimedCount >= a.levels.length;
-
-          // Hidden achievements: don't show until player has some progress or has claimed a level
-          if (a.visibility === "hidden" && claimedCount === 0 && progress < a.levels[0].threshold) {
-            return null;
-          }
 
           if (isMaxed) {
             return (
               <div key={a.id} style={{ ...st.panel, marginBottom: 12, opacity: 0.6 }}>
                 <div style={{
-                  fontFamily: "'Playfair Display',serif",
+                  fontFamily: "'BLKCHCRY',serif",
                   fontSize: 14,
                   fontWeight: 700,
                   color: P.textPrimary,
@@ -112,7 +192,7 @@ export function AchievementsPanel({ achievements, achievementProgress, achieveme
                   {a.levels[a.levels.length - 1].name}
                 </div>
                 <div style={{
-                  fontFamily: "'Courier Prime',monospace",
+                  fontFamily: "'Junicode',sans-serif",
                   fontSize: 11,
                   color: P.sage,
                   fontWeight: 700,
@@ -124,20 +204,13 @@ export function AchievementsPanel({ achievements, achievementProgress, achieveme
           }
 
           const currentLevel = a.levels[claimedCount];
-          const pct          = Math.min(progress / currentLevel.threshold, 1) * 100;
           const isReady      = progress >= currentLevel.threshold;
-          const goalLabels   = {
-            ink:      n => `Collect ${fmt(n)} ink`,
-            words:    n => `Inscribe ${fmt(n)} unique words`,
-            lexicons: n => `Publish ${fmt(n)} lexicons`,
-          };
-          const goalText = (goalLabels[a.unit ?? "ink"])(currentLevel.threshold);
+          const goalText     = (goalLabels[a.unit ?? "ink"])(currentLevel.threshold);
 
           return (
             <div key={a.id} style={{ ...st.panel, marginBottom: 12 }}>
-              {/* Level name */}
               <div style={{
-                fontFamily: "'Playfair Display',serif",
+                fontFamily: "'BLKCHCRY',serif",
                 fontSize: 14,
                 fontWeight: 700,
                 color: P.textPrimary,
@@ -145,87 +218,92 @@ export function AchievementsPanel({ achievements, achievementProgress, achieveme
               }}>
                 {currentLevel.name}
               </div>
-
-              {/* Goal description */}
               <div style={{
-                fontFamily: "'Courier Prime',monospace",
+                fontFamily: "'Junicode',sans-serif",
                 fontSize: 11,
                 color: P.textSecondary,
                 marginBottom: 4,
               }}>
                 {goalText}
               </div>
-
-              {/* Level indicator */}
               <div style={{
-                fontFamily: "'Courier Prime',monospace",
+                fontFamily: "'Junicode',sans-serif",
                 fontSize: 10,
                 color: P.textMuted,
                 marginBottom: 8,
               }}>
                 Level {claimedCount + 1} / {a.levels.length}
               </div>
-
-              {/* Progress bar with overlaid numbers */}
-              <div style={{
-                position: "relative",
-                height: 20,
-                background: P.borderLight,
-                borderRadius: 4,
-                overflow: "hidden",
-                marginBottom: 12,
-              }}>
-                <div style={{
-                  height: "100%",
-                  width: `${pct}%`,
-                  background: isReady ? P.sage : P.ink,
-                  borderRadius: 4,
-                  transition: "width 0.3s ease",
-                }} />
-                <div style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontFamily: "'Courier Prime',monospace",
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: "#fff",
-                  textShadow: "0 1px 2px rgba(0,0,0,0.5)",
-                  pointerEvents: "none",
-                }}>
-                  {fmt(progress)} / {fmt(currentLevel.threshold)}
-                </div>
-              </div>
-
-              {/* Reward + claim row */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 5,
-                  fontFamily: "'Courier Prime',monospace",
-                  fontSize: 11,
-                  color: P.quill,
-                }}>
-                  <BookMarked size={13} />
-                  {currentLevel.reward} notebook{currentLevel.reward !== 1 ? "s" : ""}
-                </div>
-                <button
-                  onClick={() => isReady && onClaim(a.id)}
-                  style={{
-                    ...st.btn(isReady),
-                    padding: "6px 14px",
-                    fontSize: 11,
-                  }}
-                >
-                  Claim
-                </button>
-              </div>
+              <ProgressBar progress={progress} threshold={currentLevel.threshold} />
+              <RewardClaimRow reward={currentLevel.reward} isReady={isReady} onClaim={() => onClaim(a.id)} />
             </div>
           );
         })}
+
+        {/* Hidden achievements section */}
+        {hiddenAchievements.length > 0 && (
+          <>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginTop: 8,
+              marginBottom: 12,
+            }}>
+              <div style={{ flex: 1, height: 1, background: P.border }} />
+              <div style={{
+                fontFamily: "'Junicode',sans-serif",
+                fontSize: 10,
+                color: P.textMuted,
+                whiteSpace: "nowrap",
+              }}>
+                Hidden ({hiddenAchievements.length})
+              </div>
+              <div style={{ flex: 1, height: 1, background: P.border }} />
+            </div>
+
+            {hiddenAchievements.map(a => {
+              const progress   = achievementProgress[a.id] ?? 0;
+              const firstLevel = a.levels[0];
+              const isReady    = progress >= firstLevel.threshold;
+              const goalText   = (goalLabels[a.unit ?? "ink"])(firstLevel.threshold);
+
+              return (
+                <div key={a.id} style={{ ...st.panel, marginBottom: 12, opacity: isReady ? 1 : 0.75 }}>
+                  <div style={{
+                    fontFamily: "'BLKCHCRY',serif",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: isReady ? P.textPrimary : P.textMuted,
+                    marginBottom: 2,
+                    letterSpacing: isReady ? 0 : 2,
+                  }}>
+                    {isReady ? firstLevel.name : "???"}
+                  </div>
+                  <div style={{
+                    fontFamily: "'Junicode',sans-serif",
+                    fontSize: 11,
+                    color: isReady ? P.textSecondary : P.textMuted,
+                    marginBottom: 4,
+                    letterSpacing: isReady ? 0 : 1,
+                  }}>
+                    {isReady ? goalText : "???"}
+                  </div>
+                  <div style={{
+                    fontFamily: "'Junicode',sans-serif",
+                    fontSize: 10,
+                    color: P.textMuted,
+                    marginBottom: 8,
+                  }}>
+                    0 / {a.levels.length}
+                  </div>
+                  <ProgressBar progress={progress} threshold={firstLevel.threshold} />
+                  <RewardClaimRow reward={firstLevel.reward} isReady={isReady} onClaim={() => onClaim(a.id)} />
+                </div>
+              );
+            })}
+          </>
+        )}
       </div>
     </div>
   );

@@ -31,9 +31,9 @@ export const P = {
 // --- SHARED STYLE HELPERS ---
 export const st = {
   panel:   { background:P.panelBg, border:`1px solid ${P.border}`, borderRadius:10, padding:20, marginBottom:16, boxShadow:"0 1px 4px rgba(44,36,32,0.06)" },
-  heading: { fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:P.textPrimary, marginBottom:4 },
-  sub:     { fontSize:12, color:P.textSecondary, fontFamily:"'Courier Prime',monospace", marginBottom:16 },
-  btn: (active) => ({ padding:"10px 20px", background:active?P.btnActiveBg:P.btnInactiveBg, color:active?P.btnActiveText:P.btnInactiveText, border:"none", borderRadius:6, cursor:active?"pointer":"default", fontFamily:"'Playfair Display',serif", fontSize:13, fontWeight:700, letterSpacing:1, textTransform:"uppercase", boxShadow:active?"0 2px 8px rgba(61,90,110,0.18)":"none", transition:"all 0.2s" }),
+  heading: { fontFamily:"'BLKCHCRY',serif", fontSize:18, fontWeight:700, letterSpacing:1, color:P.textPrimary, marginBottom:4 },
+  sub:     { fontSize:12, color:P.textSecondary, fontFamily:"'Junicode',sans-serif", marginBottom:16 },
+  btn: (active) => ({ padding:"10px 20px", background:active?P.btnActiveBg:P.btnInactiveBg, color:active?P.btnActiveText:P.btnInactiveText, border:"none", borderRadius:6, cursor:active?"pointer":"default", fontFamily:"'BLKCHCRY',serif", fontSize:13, fontWeight:700, letterSpacing:0.5, boxShadow:active?"0 2px 8px rgba(61,90,110,0.18)":"none", transition:"all 0.2s" }),
 };
 
 // --- GLOBAL CSS ---

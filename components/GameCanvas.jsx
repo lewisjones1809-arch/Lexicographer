@@ -41,7 +41,7 @@ export const GameCanvas = forwardRef(function GameCanvas(_, ref) {
           fill: "#ffd700",
           fontSize: 16,
           fontWeight: "bold",
-          fontFamily: "'Courier Prime', monospace",
+          fontFamily: "'Junicode', sans-serif",
           dropShadow: { blur: 4, color: "#000000", distance: 1, alpha: 0.5 },
         },
       });

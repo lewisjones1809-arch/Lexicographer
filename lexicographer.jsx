@@ -40,6 +40,7 @@ import { StatsModal } from "./components/StatsModal.jsx";
 export default function Lexicographer() {
   const isTutorial = localStorage.getItem('lexTutorialDone') !== 'true';
 
+  const [wellFloats, setWellFloats] = useState({});
   const [collectedInk, setCollectedInk] = useState(isTutorial ? 15 : 0);
   const [letters, setLetters] = useState(() =>
     isTutorial
@@ -51,8 +52,6 @@ export default function Lexicographer() {
   const [quills, setQuills] = useState(0);
   const [publishedLexicons, setPublishedLexicons] = useState([]);
   const [activeTab, setActiveTab] = useState("lexicon");
-  const [message, setMessage] = useState("");
-  const [msgKey, setMsgKey] = useState(0);
   const [showPublishAnim, setShowPublishAnim] = useState(false);
   const [showPublishPreview, setShowPublishPreview] = useState(false);
   const [publishBreakdown, setPublishBreakdown] = useState(null);
@@ -108,8 +107,8 @@ export default function Lexicographer() {
   const [activePageId, setActivePageId] = useState("parchment");
 
   // Scaling multipliers (tunable via debug)
-  const [scalingA, setScalingA] = useState(2);
-  const [scalingB, setScalingB] = useState(0.5);
+  const [scalingA, setScalingA] = useState(0.1);
+  const [scalingB, setScalingB] = useState(0.05);
 
   // Daily missions
   const [showMissions, setShowMissions] = useState(false);
@@ -169,7 +168,8 @@ export default function Lexicographer() {
   const inkCost         = useMemo(() => BASE_INK_COST + lexicon.length * INK_COST_SCALE, [lexicon.length]);
 
   const isValidWord = useCallback((w) => WORD_LIST.has(w.toUpperCase()), []);
-  const showMsg     = useCallback((msg) => { setMessage(msg); setMsgKey(k=>k+1); }, []);
+  // eslint-disable-next-line no-unused-vars
+  const showMsg     = useCallback((_msg) => {}, []);
 
   const buyPermUpgrade = useCallback((upgradeId, count = 1, totalCost = null) => {
     const upg = PERM_UPGRADES.find(u => u.id === upgradeId);
@@ -177,7 +177,7 @@ export default function Lexicographer() {
     const currentLevel = permUpgradeLevels[upgradeId] || 0;
     if (currentLevel >= upg.maxLevel) return;
     const cost = totalCost ?? (upg.levels ? upg.levels[currentLevel].cost : upg.costFormula(currentLevel));
-    if (quills < cost) { setMessage("Not enough quills!"); setMsgKey(k=>k+1); return; }
+    if (quills < cost) return;
     setQuills(q => q - cost);
     setPermUpgradeLevels(prev => ({ ...prev, [upgradeId]: Math.min(currentLevel + count, upg.maxLevel) }));
     if (upgradeId === "monkey_efficiency") {
@@ -190,7 +190,11 @@ export default function Lexicographer() {
     const count = permUpgradeLevels["monkey_typewriter"] || 0;
     setMonkeyTimers(prev => {
       if (prev.length === count) return prev;
-      if (prev.length < count) return [...prev, ...Array(count - prev.length).fill(monkeySearchTimeRef.current)];
+      if (prev.length < count) {
+        const searchTime = monkeySearchTimeRef.current;
+        const newTimers = Array.from({ length: count - prev.length }, () => Math.max(1, Math.floor(Math.random() * searchTime)));
+        return [...prev, ...newTimers];
+      }
       return prev.slice(0, count);
     });
   }, [permUpgradeLevels]);
@@ -307,6 +311,12 @@ export default function Lexicographer() {
       const inkMult  = Math.pow(1.01, permLevels.ink_multiplier || 0);
       const maxLett  = MAX_LETTERS + (permLevels.max_letters || 0) * 10;
       const totLett  = Object.values(vs.letters || {}).reduce((a, b) => a + b, 0) + (vs.specialTiles || []).length;
+      const monkeySearchTime = Math.max(30, 300 - (permLevels.monkey_efficiency || 0) * 10);
+      const findChance       = 0.1 + (permLevels.monkey_intuition || 0) * 0.01;
+      const currentLexWords  = new Set((vs.lexicon || []).map(e => e.word));
+      const availableMonkeyWords = (state.publishedLexicons || [])
+        .flatMap(l => (l.entries || []).map(e => e.word))
+        .filter(w => !currentLexWords.has(w));
       const result   = computeOfflineProgress({
         wells: vs.wells || [], wellMgrCount: vs.wellMgrCount || 0,
         wellMgrEnabled: vs.wellMgrEnabled || [],
@@ -314,8 +324,9 @@ export default function Lexicographer() {
         presses: vs.presses || [], pressMgrCount: vs.pressMgrCount || 0,
         pressUpgradeLevels: vs.pressUpgradeLevels || [],
         totalLetters: totLett, effectiveInkMult: inkMult, effectiveMaxLetters: maxLett,
+        monkeyTimers: vs.monkeyTimers || [], monkeySearchTime, findChance, availableMonkeyWords,
       }, pending.elapsed);
-      if (result.inkEarned > 0 || result.totalNewLetters > 0) {
+      if (result.inkEarned > 0 || result.totalNewLetters > 0 || result.monkeyWords?.length > 0) {
         offline = { elapsedSeconds: pending.elapsed, ...result };
       }
     }
@@ -329,7 +340,10 @@ export default function Lexicographer() {
       setCollectedInk((vs.collectedInk ?? 0) + (state.inkBoostPending ? 5000 : 0) + (offline?.inkEarned ?? 0));
       setLetters(baseLett);
       setWordTiles(vs.wordTiles ?? []);
-      setLexicon(vs.lexicon ?? []);
+      const baseLexicon = vs.lexicon ?? [];
+      const existingWords = new Set(baseLexicon.map(e => e.word));
+      const monkeyEntries = (offline?.monkeyWords || []).filter(e => !existingWords.has(e.word));
+      setLexicon([...baseLexicon, ...monkeyEntries]);
       setWellCount(vs.wellCount ?? 1);
       setWells(vs.wells ?? [{ ink: 50, collecting: false, collectTimer: 10 }]);
       setWellMgrCount(vs.wellMgrCount ?? 0);
@@ -707,8 +721,9 @@ export default function Lexicographer() {
     // Guest path: no token means no applyServerState will run, so apply now
     if (!localStorage.getItem('lexToken') && snapshot) {
       const result = computeOfflineProgress(snapshot, elapsed);
-      if (result.inkEarned > 0 || result.totalNewLetters > 0) {
-        setCollectedInk(p => p + result.inkEarned);
+      const hasGains = result.inkEarned > 0 || result.totalNewLetters > 0 || result.monkeyWords?.length > 0;
+      if (hasGains) {
+        if (result.inkEarned > 0) setCollectedInk(p => p + result.inkEarned);
         if (result.totalNewLetters > 0) {
           setLetters(p => {
             const next = { ...p };
@@ -716,6 +731,12 @@ export default function Lexicographer() {
             return next;
           });
           setSpecialTiles(p => [...p, ...result.newSpecials]);
+        }
+        if (result.monkeyWords?.length > 0) {
+          setLexicon(p => {
+            const existing = new Set(p.map(e => e.word));
+            return [...p, ...result.monkeyWords.filter(e => !existing.has(e.word))];
+          });
         }
         setOfflineReward({ elapsedSeconds: elapsed, ...result });
       }
@@ -733,6 +754,13 @@ export default function Lexicographer() {
       const inkMult    = Math.pow(1.01, permLevels.ink_multiplier || 0);
       const maxLett    = MAX_LETTERS + (permLevels.max_letters || 0) * 10;
       const totalLetters = Object.values(vs.letters || {}).reduce((a, b) => a + b, 0) + (vs.specialTiles || []).length;
+      const monkeySearchTime = Math.max(30, 300 - (permLevels.monkey_efficiency || 0) * 10);
+      const findChance = 0.1 + (permLevels.monkey_intuition || 0) * 0.01;
+      const currentLexiconWords = new Set((vs.lexicon || []).map(e => e.word));
+      const publishedLexicons = syncStateRef.current?.publishedLexicons || [];
+      const availableMonkeyWords = publishedLexicons
+        .flatMap(l => (l.entries || []).map(e => e.word))
+        .filter(w => !currentLexiconWords.has(w));
       localStorage.setItem('lexOfflineSnapshot', JSON.stringify({
         wells: vs.wells || [], wellMgrCount: vs.wellMgrCount || 0,
         wellMgrEnabled: vs.wellMgrEnabled || [],
@@ -740,6 +768,7 @@ export default function Lexicographer() {
         presses: vs.presses || [], pressMgrCount: vs.pressMgrCount || 0,
         pressUpgradeLevels: vs.pressUpgradeLevels || [],
         totalLetters, effectiveInkMult: inkMult, effectiveMaxLetters: maxLett,
+        monkeyTimers: vs.monkeyTimers || [], monkeySearchTime, findChance, availableMonkeyWords,
       }));
     };
     const visHandler = () => { if (document.visibilityState === 'hidden') save(); };
@@ -771,15 +800,13 @@ export default function Lexicographer() {
       setCollectedInk(p => p + result.amount);
       advanceMissions("ink_collected", result.amount);
       advanceAchievement("ink_collected", result.amount);
+      setWellFloats(prev => ({ ...prev, [idx]: { amount: result.amount, isCrit: result.isCrit, key: Date.now() } }));
       if (result.isCrit) {
         const el = wellRefsArr.current[idx];
         if (el) {
           const r = el.getBoundingClientRect();
           gameCanvasRef.current?.playCritBubble(r.left + r.width / 2, r.top, `★ Crit! +${fmt(result.amount)}`);
         }
-        showMsg(`★ Critical! +${fmt(result.amount)} ink from Well ${idx + 1}!`);
-      } else {
-        showMsg(`Collected ${fmt(result.amount)} ink from Well ${idx + 1}!`);
       }
       setWells(prev => prev.map((ww, i) => i === idx ? { ...ww, ink: 0 } : ww));
     }
@@ -862,14 +889,18 @@ export default function Lexicographer() {
     advanceMissions("words_inscribed", 1);
     advanceMissions("long_word", 1, { wordLength: word.length });
     advanceAchievement("unique_words_found", 1);
+    if (assignments.every(a => a.type === "lexicoin")) {
+      setAchievementProgress(prev => ({ ...prev, wildcard_word: Math.max(prev.wildcard_word ?? 0, word.length) }));
+    }
     const bonus = details.length > 0 ? ` [${details.join(", ")}]` : "";
     const goldenMsg = goldenCount > 0 ? ` +${goldenCount} 📓 Golden Notebook!` : "";
     showMsg(`"${word}" inscribed! (${total} Lexicoins${bonus}${goldenMsg}, cost ${fmt(inkCost)} ink)`);
   };
 
   const publishLexicon = () => {
-    if(lexicon.length===0){showMsg("Lexicon is empty!");return;}
-    const bd = calculateQuillsBreakdown(lexicon, coverMult, pageMult, scalingA, scalingB);
+    if(lexicon.length < 10){showMsg("Need at least 10 words to publish!");return;}
+    const previousWords = new Set(publishedLexicons.flatMap(l => (l.entries || []).map(e => e.word)));
+    const bd = calculateQuillsBreakdown(lexicon, coverMult, pageMult, scalingA, scalingB, previousWords);
     setPublishBreakdown(bd);
     setShowPublishPreview(true);
   };
@@ -969,26 +1000,30 @@ export default function Lexicographer() {
 
   return (
     <div style={{ background:P.appBg }}>
-    <div style={{ maxWidth:900, margin:"0 auto", width:"100%", minHeight:"100vh", color:P.textPrimary, fontFamily:"'Courier Prime', monospace", display:"flex", flexDirection:"column" }}>
+    <div style={{ maxWidth:900, margin:"0 auto", width:"100%", minHeight:"100vh", color:P.textPrimary, fontFamily:"'Junicode', sans-serif", display:"flex", flexDirection:"column" }}>
 
       <div style={{ textAlign:"center", padding:"16px 16px 0", position:"relative", zIndex:1 }}>
-        <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:700, letterSpacing:3, margin:0, color:P.textPrimary }}>LEXICOGRAPHER</h1>
+        <h1 style={{ fontFamily:"'BLKCHCRY',serif", fontSize:26, fontWeight:700, letterSpacing:1, margin:0, color:P.textPrimary }}>Lexicographer</h1>
         <div style={{ width:80, height:1, margin:"6px auto", background:P.border }}/>
       </div>
 
-      <div style={{ position:"relative", display:"flex", justifyContent:"center", gap:24, padding:"10px 16px", borderBottom:`1px solid ${P.border}`, margin:"0 16px" }}>
-        {[
-          { key:"ink",     icon:<Droplet    size={13} strokeWidth={1.5}/>, v:fmt(collectedInk),   c:P.ink },
-          { key:"letters", icon:<CaseUpper  size={13} strokeWidth={1.5}/>, v:totalLetters,         c:P.textSecondary },
-          { key:"quills",  icon:<Feather    size={13} strokeWidth={1.5}/>, v:fmt(quills),          c:P.quill },
-          { key:"nb",      icon:<BookMarked size={13} strokeWidth={1.5}/>, v:fmt(goldenNotebooks), c:P.quill },
-        ].map(s=>(
-          <div key={s.key} style={{ textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
-            <div style={{ color:s.c, opacity:0.65 }}>{s.icon}</div>
-            <div style={{ fontSize:17, fontWeight:700, color:s.c, fontFamily:"'Playfair Display',serif" }}>{s.v}</div>
-          </div>
-        ))}
-        <div style={{ position:"absolute", right:16, top:"50%", transform:"translateY(-50%)", display:"flex", alignItems:"center", gap:8, zIndex:50 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 16px", borderBottom:`1px solid ${P.border}`, margin:"0 16px" }}>
+        {/* 2×2 currency grid — left */}
+        <div style={{ display:"grid", gridTemplateColumns:"auto auto", gap:"3px 20px" }}>
+          {[
+            { key:"ink",     icon:<Droplet    size={12} strokeWidth={1.5}/>, v:fmt(collectedInk),   c:P.ink },
+            { key:"quills",  icon:<Feather    size={12} strokeWidth={1.5}/>, v:fmt(quills),          c:P.quill },
+            { key:"letters", icon:<CaseUpper  size={12} strokeWidth={1.5}/>, v:fmt(totalLetters),   c:P.textSecondary },
+            { key:"nb",      icon:<BookMarked size={12} strokeWidth={1.5}/>, v:fmt(goldenNotebooks), c:P.quill },
+          ].map(s=>(
+            <div key={s.key} style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <div style={{ color:s.c, opacity:0.7, display:"flex", alignItems:"center" }}>{s.icon}</div>
+              <div style={{ fontSize:14, fontWeight:700, color:s.c, fontFamily:"'Junicode',sans-serif", lineHeight:1.2 }}>{s.v}</div>
+            </div>
+          ))}
+        </div>
+        {/* Action buttons — right */}
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
           <AchievementsTrigger onClick={() => setShowAchievements(true)} claimableCount={claimableCount} />
           <MissionsTrigger onClick={() => setShowMissions(true)} unclaimedCount={missions.filter(m => m.progress >= m.target && !m.claimed).length} />
           <div data-settings-panel style={{ position:"relative" }}>
@@ -997,36 +1032,23 @@ export default function Lexicographer() {
             </div>
             {showSettings && (
               <div data-settings-panel style={{ position:"absolute", right:0, top:"calc(100% + 8px)", minWidth:130, background:"#fff", border:`1px solid ${P.border}`, borderRadius:6, overflow:"hidden", zIndex:200, boxShadow:"0 4px 16px rgba(0,0,0,0.18)" }}>
-                <div onClick={() => { setShowStats(true); setShowSettings(false); }} style={{ padding:"9px 14px", cursor:"pointer", fontSize:11, fontFamily:"'Courier Prime',monospace", color:P.textSecondary, borderBottom:`1px solid ${P.borderLight}` }}>
+                <div onClick={() => { setShowStats(true); setShowSettings(false); }} style={{ padding:"9px 14px", cursor:"pointer", fontSize:11, fontFamily:"'Junicode',sans-serif", color:P.textSecondary, borderBottom:`1px solid ${P.borderLight}` }}>
                   Stats
                 </div>
-                <div onClick={() => { setShowDebug(d => !d); setShowSettings(false); }} style={{ padding:"9px 14px", cursor:"pointer", fontSize:11, fontFamily:"'Courier Prime',monospace", color:showDebug ? P.ink : P.textSecondary, borderBottom:`1px solid ${P.borderLight}` }}>
+                <div onClick={() => { setShowDebug(d => !d); setShowSettings(false); }} style={{ padding:"9px 14px", cursor:"pointer", fontSize:11, fontFamily:"'Junicode',sans-serif", color:showDebug ? P.ink : P.textSecondary, borderBottom:`1px solid ${P.borderLight}` }}>
                   {showDebug ? "✓ " : ""}Debug
                 </div>
                 {currentUser && (
-                  <div onClick={() => { setShowAccountModal(true); setShowSettings(false); }} style={{ padding:"9px 14px", cursor:"pointer", fontSize:11, fontFamily:"'Courier Prime',monospace", color:P.textSecondary, borderBottom:`1px solid ${P.borderLight}` }}>Account</div>
+                  <div onClick={() => { setShowAccountModal(true); setShowSettings(false); }} style={{ padding:"9px 14px", cursor:"pointer", fontSize:11, fontFamily:"'Junicode',sans-serif", color:P.textSecondary, borderBottom:`1px solid ${P.borderLight}` }}>Account</div>
                 )}
                 {currentUser
-                  ? <div onClick={() => { handleLogout(); setShowSettings(false); }} style={{ padding:"9px 14px", cursor:"pointer", fontSize:11, fontFamily:"'Courier Prime',monospace", color:P.textSecondary }}>Sign out</div>
-                  : <div onClick={() => { setShowAuthModal(true); setShowSettings(false); }} style={{ padding:"9px 14px", cursor:"pointer", fontSize:11, fontFamily:"'Courier Prime',monospace", color:P.textSecondary }}>Sign in</div>
+                  ? <div onClick={() => { handleLogout(); setShowSettings(false); }} style={{ padding:"9px 14px", cursor:"pointer", fontSize:11, fontFamily:"'Junicode',sans-serif", color:P.textSecondary }}>Sign out</div>
+                  : <div onClick={() => { setShowAuthModal(true); setShowSettings(false); }} style={{ padding:"9px 14px", cursor:"pointer", fontSize:11, fontFamily:"'Junicode',sans-serif", color:P.textSecondary }}>Sign in</div>
                 }
               </div>
             )}
           </div>
         </div>
-      </div>
-
-      <div style={{ minHeight:22, textAlign:"center", padding:"5px 16px" }}>
-        <AnimatePresence mode="wait">
-          {message && (
-            <motion.div key={msgKey}
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: [0, 1, 1, 0], y: [-4, 0, 0, 0] }}
-              transition={{ duration: 2.5, ease: "easeOut", times: [0, 0.15, 0.7, 1] }}
-              style={{ fontSize:12, color:P.ink, fontStyle:"italic" }}
-            >{message}</motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       <div style={{ display:"flex", margin:"0 16px", borderBottom:`1px solid ${P.border}`, position:"relative", zIndex:1 }}>
@@ -1041,7 +1063,7 @@ export default function Lexicographer() {
                 borderBottom: activeTab===tab.id ? `2px solid ${P.ink}` : "2px solid transparent",
                 color: activeTab===tab.id ? P.textPrimary : isHinted ? P.ink : P.textMuted,
                 cursor:"pointer",
-                fontFamily:"'Playfair Display',serif", fontSize:12,
+                fontFamily:"'BLKCHCRY',serif", fontSize:12,
                 fontWeight: activeTab===tab.id ? 700 : isHinted ? 700 : 400,
                 transition:"all 0.2s",
               }}>{tab.label}</motion.button>
@@ -1058,6 +1080,7 @@ export default function Lexicographer() {
           showMsg={showMsg}
           scalingA={scalingA} setScalingA={setScalingA}
           scalingB={scalingB} setScalingB={setScalingB}
+          onClose={() => setShowDebug(false)}
         />}
 
         {activeTab==="lexicon" && <LexiconTab
@@ -1076,6 +1099,7 @@ export default function Lexicographer() {
           monkeyTimers={monkeyTimers}
           monkeyAnims={monkeyAnims}
           clearMonkeyAnim={clearMonkeyAnim}
+          volumeNumber={publishedLexicons.length + 1}
         />}
 
         {activeTab==="inkwell" && <InkWellTab
@@ -1085,7 +1109,7 @@ export default function Lexicographer() {
           toggleWellManager={toggleWellManager}
           wellUpgradeLevels={wellUpgradeLevels} mgrUpgradeLevels={mgrUpgradeLevels}
           buyDeviceUpgrade={buyDeviceUpgrade}
-          wellRefs={wellRefsArr}
+          wellRefs={wellRefsArr} wellFloats={wellFloats}
           tutorialStep={tutorialStep} unlockedQtys={unlockedQtys} inkMult={effectiveInkMult}
         />}
 
@@ -1152,36 +1176,36 @@ export default function Lexicographer() {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
           style={{ position:"fixed", inset:0, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(44,36,32,0.55)", zIndex:100 }}>
           <div style={{ background:P.panelBg, border:`1px solid ${P.border}`, borderRadius:12, padding:"28px 28px", maxWidth:380, width:"90%", boxShadow:"0 8px 32px rgba(44,36,32,0.15)" }} onClick={e=>e.stopPropagation()}>
-            <div style={{ textAlign:"center", fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, color:P.textPrimary, letterSpacing:1, marginBottom:4 }}>Publish Lexicon?</div>
-            <div style={{ textAlign:"center", fontSize:11, color:P.textMuted, fontFamily:"'Courier Prime',monospace", marginBottom:18 }}>This will reset your current round.</div>
+            <div style={{ textAlign:"center", fontFamily:"'BLKCHCRY',serif", fontSize:20, fontWeight:700, color:P.textPrimary, letterSpacing:1, marginBottom:4 }}>Publish Lexicon?</div>
+            <div style={{ textAlign:"center", fontSize:11, color:P.textMuted, fontFamily:"'Junicode',sans-serif", marginBottom:18 }}>This will reset your current round.</div>
 
             <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:20 }}>
               <div style={{ display:"flex", justifyContent:"space-between" }}>
-                <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Courier Prime',monospace" }}>{publishBreakdown.wordCount} words × {publishBreakdown.A}</span>
-                <span style={{ fontSize:14, color:P.textPrimary, fontFamily:"'Playfair Display',serif", fontWeight:700 }}>{fmt(publishBreakdown.wordBonus)}</span>
+                <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Junicode',sans-serif" }}>{publishBreakdown.wordCount} new words × {publishBreakdown.A}</span>
+                <span style={{ fontSize:14, color:P.textPrimary, fontFamily:"'Junicode',sans-serif", fontWeight:700 }}>{fmt(publishBreakdown.wordBonus)}</span>
               </div>
               <div style={{ display:"flex", justifyContent:"space-between" }}>
-                <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Courier Prime',monospace", display:"inline-flex", alignItems:"center", gap:3 }}><Aperture size={11}/>{publishBreakdown.totalLexicoins} Lexicoins × {publishBreakdown.B}</span>
-                <span style={{ fontSize:14, color:P.textPrimary, fontFamily:"'Playfair Display',serif", fontWeight:700 }}>+{fmt(publishBreakdown.lexicoinBonus)}</span>
+                <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Junicode',sans-serif", display:"inline-flex", alignItems:"center", gap:3 }}><Aperture size={11}/>{publishBreakdown.totalLexicoins} Lexicoins × {publishBreakdown.B}</span>
+                <span style={{ fontSize:14, color:P.textPrimary, fontFamily:"'Junicode',sans-serif", fontWeight:700 }}>+{fmt(publishBreakdown.lexicoinBonus)}</span>
               </div>
               {publishBreakdown.top10.length > 0 && (
-                <div style={{ fontSize:11, color:P.textMuted, fontFamily:"'Courier Prime',monospace", display:"flex", alignItems:"center", gap:2 }}>
+                <div style={{ fontSize:11, color:P.textMuted, fontFamily:"'Junicode',sans-serif", display:"flex", alignItems:"center", gap:2 }}>
                   <Aperture size={10}/>{fmt(publishBreakdown.top10Total)} → ×{publishBreakdown.highMult.toFixed(2)} word bonus
                 </div>
               )}
               <div style={{ display:"flex", justifyContent:"space-between" }}>
-                <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Courier Prime',monospace" }}>Design bonus</span>
-                <span style={{ fontSize:14, color:P.textPrimary, fontFamily:"'Playfair Display',serif", fontWeight:700 }}>×{publishBreakdown.designMult.toFixed(2)}</span>
+                <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Junicode',sans-serif" }}>Design bonus</span>
+                <span style={{ fontSize:14, color:P.textPrimary, fontFamily:"'Junicode',sans-serif", fontWeight:700 }}>×{publishBreakdown.designMult.toFixed(2)}</span>
               </div>
               <div style={{ height:1, background:P.border }}/>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <span style={{ fontSize:13, color:P.textSecondary, fontFamily:"'Courier Prime',monospace" }}>Quills earned</span>
-                <span style={{ fontSize:28, color:P.quill, fontFamily:"'Playfair Display',serif", fontWeight:700, display:"inline-flex", alignItems:"center", gap:6 }}><Feather size={22}/> {fmt(publishBreakdown.total)}</span>
+                <span style={{ fontSize:13, color:P.textSecondary, fontFamily:"'Junicode',sans-serif" }}>Quills earned</span>
+                <span style={{ fontSize:18, color:P.quill, fontFamily:"'Junicode',sans-serif", fontWeight:700, display:"inline-flex", alignItems:"center", gap:4 }}><Feather size={15}/> {fmt(publishBreakdown.total)}</span>
               </div>
             </div>
 
             <div style={{ display:"flex", gap:10 }}>
-              <button onClick={() => setShowPublishPreview(false)} style={{ ...st.btn(false), flex:1 }}>Cancel</button>
+              <button onClick={() => setShowPublishPreview(false)} style={{ ...st.btn(false), flex:1, cursor:"pointer" }}>Cancel</button>
               <button onClick={confirmPublish} style={{ ...st.btn(true), flex:2 }}>Confirm Publish</button>
             </div>
           </div>
@@ -1195,57 +1219,57 @@ export default function Lexicographer() {
           style={{ position:"fixed", inset:0, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(44,36,32,0.55)", zIndex:100, cursor:"pointer" }}>
           <div style={{ background:P.panelBg, border:`1px solid ${P.border}`, borderRadius:12, padding:"28px 28px", maxWidth:380, width:"90%", boxShadow:"0 8px 32px rgba(44,36,32,0.15)" }}>
             <motion.div initial={{ opacity:0, scale:0.8 }} animate={{ opacity:1, scale:1 }} transition={{ duration:0.5 }}
-              style={{ textAlign:"center", fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, color:P.textPrimary, letterSpacing:1, marginBottom:18 }}>Lexicon Published</motion.div>
+              style={{ textAlign:"center", fontFamily:"'BLKCHCRY',serif", fontSize:20, fontWeight:700, color:P.textPrimary, letterSpacing:1, marginBottom:18 }}>Lexicon Published</motion.div>
 
             <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:18 }}>
               <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.2 }}
                 style={{ display:"flex", justifyContent:"space-between" }}>
-                <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Courier Prime',monospace" }}>{publishBreakdown.wordCount} words × {publishBreakdown.A}</span>
-                <span style={{ fontSize:14, color:P.textPrimary, fontFamily:"'Playfair Display',serif", fontWeight:700 }}>{fmt(publishBreakdown.wordBonus)}</span>
+                <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Junicode',sans-serif" }}>{publishBreakdown.wordCount} new words × {publishBreakdown.A}</span>
+                <span style={{ fontSize:14, color:P.textPrimary, fontFamily:"'Junicode',sans-serif", fontWeight:700 }}>{fmt(publishBreakdown.wordBonus)}</span>
               </motion.div>
               <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.35 }}
                 style={{ display:"flex", justifyContent:"space-between" }}>
-                <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Courier Prime',monospace", display:"inline-flex", alignItems:"center", gap:3 }}><Aperture size={11}/>{publishBreakdown.totalLexicoins} Lexicoins × {publishBreakdown.B}</span>
-                <span style={{ fontSize:14, color:P.textPrimary, fontFamily:"'Playfair Display',serif", fontWeight:700 }}>+{fmt(publishBreakdown.lexicoinBonus)}</span>
+                <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Junicode',sans-serif", display:"inline-flex", alignItems:"center", gap:3 }}><Aperture size={11}/>{publishBreakdown.totalLexicoins} Lexicoins × {publishBreakdown.B}</span>
+                <span style={{ fontSize:14, color:P.textPrimary, fontFamily:"'Junicode',sans-serif", fontWeight:700 }}>+{fmt(publishBreakdown.lexicoinBonus)}</span>
               </motion.div>
               <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.45 }}
                 style={{ height:1, background:P.border }}/>
               <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.5 }}
                 style={{ display:"flex", justifyContent:"space-between" }}>
-                <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Courier Prime',monospace" }}>Base</span>
-                <span style={{ fontSize:15, color:P.textPrimary, fontFamily:"'Playfair Display',serif", fontWeight:700 }}>{fmt(publishBreakdown.base)}</span>
+                <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Junicode',sans-serif" }}>Base</span>
+                <span style={{ fontSize:15, color:P.textPrimary, fontFamily:"'Junicode',sans-serif", fontWeight:700 }}>{fmt(publishBreakdown.base)}</span>
               </motion.div>
 
               {publishBreakdown.top10.length > 0 && (
                 <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.6 }}>
-                  <div style={{ fontSize:11, color:P.textMuted, fontFamily:"'Courier Prime',monospace", marginBottom:4 }}>Top scoring words:</div>
+                  <div style={{ fontSize:11, color:P.textMuted, fontFamily:"'Junicode',sans-serif", marginBottom:4 }}>Top scoring words:</div>
                   <div style={{ display:"flex", flexWrap:"wrap", gap:3, marginBottom:4 }}>
                     {publishBreakdown.top10.map((item,i)=>(
-                      <span key={i} style={{ padding:"2px 6px", background:P.surfaceBg, border:`1px solid ${P.border}`, borderRadius:3, fontSize:10, color:P.textSecondary, fontFamily:"'Playfair Display',serif" }}>
-                        {item.word} <span style={{ color:P.quill, display:"inline-flex", alignItems:"center", gap:2 }}><Aperture size={9}/>{fmt(item.score)}</span>
+                      <span key={i} style={{ padding:"2px 6px", background:P.surfaceBg, border:`1px solid ${P.border}`, borderRadius:3, fontSize:10, color:P.textSecondary, fontFamily:"'Junicode',sans-serif" }}>
+                        {item.word.toLowerCase()} <span style={{ color:P.quill, display:"inline-flex", alignItems:"center", gap:2 }}><Aperture size={9}/>{fmt(item.score)}</span>
                       </span>
                     ))}
                   </div>
-                  <div style={{ fontSize:11, color:P.textMuted, fontFamily:"'Courier Prime',monospace", display:"flex", alignItems:"center", gap:2 }}><Aperture size={10}/>{fmt(publishBreakdown.top10Total)} → ×{publishBreakdown.highMult.toFixed(2)} word bonus</div>
+                  <div style={{ fontSize:11, color:P.textMuted, fontFamily:"'Junicode',sans-serif", display:"flex", alignItems:"center", gap:2 }}><Aperture size={10}/>{fmt(publishBreakdown.top10Total)} → ×{publishBreakdown.highMult.toFixed(2)} word bonus</div>
                 </motion.div>
               )}
 
               <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.75 }}
                 style={{ display:"flex", justifyContent:"space-between" }}>
-                <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Courier Prime',monospace" }}>Design bonus</span>
-                <span style={{ fontSize:14, color:P.textPrimary, fontFamily:"'Playfair Display',serif", fontWeight:700 }}>×{publishBreakdown.designMult.toFixed(2)}</span>
+                <span style={{ fontSize:12, color:P.textSecondary, fontFamily:"'Junicode',sans-serif" }}>Design bonus</span>
+                <span style={{ fontSize:14, color:P.textPrimary, fontFamily:"'Junicode',sans-serif", fontWeight:700 }}>×{publishBreakdown.designMult.toFixed(2)}</span>
               </motion.div>
               <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.85 }}
                 style={{ height:1, background:P.border, margin:"4px 0" }}/>
               <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:0.95 }}
                 style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <span style={{ fontSize:13, color:P.textSecondary, fontFamily:"'Courier Prime',monospace" }}>Quills earned</span>
-                <span style={{ fontSize:28, color:P.quill, fontFamily:"'Playfair Display',serif", fontWeight:700, display:"inline-flex", alignItems:"center", gap:6 }}><Feather size={22}/> {fmt(publishBreakdown.total)}</span>
+                <span style={{ fontSize:13, color:P.textSecondary, fontFamily:"'Junicode',sans-serif" }}>Quills earned</span>
+                <span style={{ fontSize:18, color:P.quill, fontFamily:"'Junicode',sans-serif", fontWeight:700, display:"inline-flex", alignItems:"center", gap:4 }}><Feather size={15}/> {fmt(publishBreakdown.total)}</span>
               </motion.div>
             </div>
 
             <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4, delay:1.1 }}
-              style={{ textAlign:"center", fontSize:10, color:P.textMuted, fontFamily:"'Courier Prime',monospace" }}>tap anywhere to continue</motion.div>
+              style={{ textAlign:"center", fontSize:10, color:P.textMuted, fontFamily:"'Junicode',sans-serif" }}>tap anywhere to continue</motion.div>
           </div>
         </motion.div>
       )}

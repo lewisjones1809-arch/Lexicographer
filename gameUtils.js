@@ -275,12 +275,35 @@ export function computeOfflineProgress(snapshot, elapsedSeconds) {
   }
 
   const totalNewLetters = Object.values(newNormals).reduce((a, b) => a + b, 0) + newSpecials.length;
-  return { inkEarned, newNormals, newSpecials, totalNewLetters };
+
+  // Monkey simulation — each monkey fires based on its saved countdown timer
+  const monkeyTimers      = snapshot.monkeyTimers      || [];
+  const monkeySearchTime  = snapshot.monkeySearchTime  || 300;
+  const findChance        = snapshot.findChance        || 0.1;
+  const wordPool          = [...(snapshot.availableMonkeyWords || [])]; // mutable copy
+
+  const monkeyWords = [];
+  for (let mi = 0; mi < monkeyTimers.length; mi++) {
+    let timeUntilFirst = monkeyTimers[mi];
+    if (elapsedSeconds < timeUntilFirst) continue; // won't fire
+    let remaining = elapsedSeconds - timeUntilFirst;
+    const firings = 1 + Math.floor(remaining / monkeySearchTime);
+    for (let f = 0; f < firings; f++) {
+      if (Math.random() < findChance && wordPool.length > 0) {
+        const wi = Math.floor(Math.random() * wordPool.length);
+        const word = wordPool.splice(wi, 1)[0]; // remove so no duplicates
+        monkeyWords.push({ word, score: scoreWord(word), letters: word.split("").map(l => ({ letter: l, type: "normal" })) });
+      }
+    }
+  }
+
+  return { inkEarned, newNormals, newSpecials, totalNewLetters, monkeyWords };
 }
 
 // --- PUBLISH CALCULATION ---
-export function calculateQuillsBreakdown(entries, coverMult, pageMult, A = 2, B = 0.5) {
-  const wordBonus = A * entries.length;
+export function calculateQuillsBreakdown(entries, coverMult, pageMult, A = 0.1, B = 0.05, previousWords = new Set()) {
+  const newWordCount = entries.filter(e => !previousWords.has(e.word)).length;
+  const wordBonus = A * newWordCount;
   const totalLexicoins = entries.reduce((s, e) => s + e.score, 0);
   const lexicoinBonus = Math.floor(B * totalLexicoins);
   const base = wordBonus + lexicoinBonus;
@@ -289,5 +312,5 @@ export function calculateQuillsBreakdown(entries, coverMult, pageMult, A = 2, B 
   const highMult = 1 + (top10Total / 100);
   const designMult = coverMult * pageMult;
   const total = Math.floor(base * highMult * designMult);
-  return { wordCount: entries.length, wordBonus, totalLexicoins, lexicoinBonus, base, top10, top10Total, highMult, designMult, coverMult, pageMult, total, A, B };
+  return { wordCount: newWordCount, wordBonus, totalLexicoins, lexicoinBonus, base, top10, top10Total, highMult, designMult, coverMult, pageMult, total, A, B };
 }

@@ -22,7 +22,7 @@ export function StatsModal({ onClose, publishedLexicons, achievementProgress, ac
   const row = (icon, label, value) => (
     <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", borderBottom:`1px solid ${P.borderLight}` }}>
       <div style={{ color:P.textMuted, flexShrink:0 }}>{icon}</div>
-      <div style={{ flex:1, fontSize:12, color:P.textSecondary, fontFamily:"'Courier Prime',monospace" }}>{label}</div>
+      <div style={{ flex:1, fontSize:12, color:P.textSecondary, fontFamily:"'Junicode',sans-serif" }}>{label}</div>
       <div style={{ fontSize:13, fontWeight:700, color:P.textPrimary, fontFamily:"'Playfair Display',serif" }}>{value}</div>
     </div>
   );

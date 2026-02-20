@@ -18,7 +18,7 @@ export function LetterTile({ letter, count, onClick, size=40, dimmed=false, tile
       style={{
         width:size, height:size, display:"inline-flex", alignItems:"center", justifyContent:"center",
         background:bg, border:`2px solid ${border}`, borderRadius:5,
-        cursor:dimmed?"default":(draggable?"grab":"pointer"), fontFamily:"'Playfair Display',serif", fontSize:size*0.45,
+        cursor:dimmed?"default":(draggable?"grab":"pointer"), fontFamily:"'Junicode',serif", fontSize:size*0.45,
         fontWeight:700, color:textColor, position:"relative", userSelect:"none",
         boxShadow:dimmed?"none":"0 1px 4px rgba(44,36,32,0.10)", transition:"all 0.12s", opacity:dimmed?0.5:1
       }}>
@@ -27,20 +27,20 @@ export function LetterTile({ letter, count, onClick, size=40, dimmed=false, tile
         position:"absolute", top:-5, right:-5, background:dimmed?"#e0d8cc":(isSpecial?tt.border:"#7a6e62"),
         color:"#ffffff", borderRadius:"50%", width:18, height:18, fontSize:10,
         display:"flex", alignItems:"center", justifyContent:"center",
-        fontFamily:"'Courier Prime',monospace", fontWeight:700
+        fontFamily:"'Junicode',sans-serif", fontWeight:700
       }}>{count}</span>}
       {tileType !== "lexicoin" && letter && LETTER_SCORES[letter] !== undefined && (
         <span style={{
           position:"absolute", bottom:-5, left:-5,
           background:"#7a6e62", color:"#ffffff", borderRadius:3, padding:"1px 3px",
-          fontSize:7, fontWeight:700, fontFamily:"'Courier Prime',monospace", lineHeight:1.2
+          fontSize:7, fontWeight:700, fontFamily:"'Junicode',sans-serif", lineHeight:1.2
         }}>{LETTER_SCORES[letter]}</span>
       )}
       {isSpecial && tt.badge && (
         <span style={{
           position:"absolute", bottom:-6, left:"50%", transform:"translateX(-50%)",
           background:tt.border, color:"#ffffff", borderRadius:3, padding:"1px 4px",
-          fontSize:7, fontWeight:700, fontFamily:"'Courier Prime',monospace",
+          fontSize:7, fontWeight:700, fontFamily:"'Junicode',sans-serif",
           whiteSpace:"nowrap", lineHeight:1.2
         }}>{tt.badge}</span>
       )}
@@ -64,8 +64,8 @@ export function LexiconKeyboard({ onSelect }) {
         background:P.panelBg, border:`1px solid ${P.border}`,
         borderRadius:10, padding:"12px 10px", boxShadow:"0 4px 20px rgba(44,36,32,0.18)",
       }}>
-        <div style={{ fontSize:10, color:P.textSecondary, fontFamily:"'Courier Prime',monospace",
-          textAlign:"center", marginBottom:10, letterSpacing:2, textTransform:"uppercase" }}>
+        <div style={{ fontSize:10, color:P.textSecondary, fontFamily:"'Junicode',sans-serif",
+          textAlign:"center", marginBottom:10, letterSpacing:1 }}>
           <Aperture size={12} style={{verticalAlign:"middle", marginRight:4}}/> Pick a letter for your wildcard
         </div>
         {rows.map((row, ri) => (
@@ -74,7 +74,7 @@ export function LexiconKeyboard({ onSelect }) {
               <button key={letter} onClick={() => onSelect(letter)} style={{
                 width:30, height:34, background:P.surfaceBg, border:`1.5px solid ${P.border}`,
                 borderRadius:4, color:P.textPrimary, fontSize:13, fontWeight:700,
-                fontFamily:"'Playfair Display',serif", cursor:"pointer", transition:"all 0.1s"
+                fontFamily:"'Junicode',serif", cursor:"pointer", transition:"all 0.1s"
               }}
                 onMouseOver={e => { e.currentTarget.style.background=P.btnActiveBg; e.currentTarget.style.color=P.btnActiveText; }}
                 onMouseOut={e => { e.currentTarget.style.background=P.surfaceBg; e.currentTarget.style.color=P.textPrimary; }}
@@ -228,7 +228,7 @@ export function WordBoard({ wordTiles, removeWordTile, reorderWordTiles, insertW
         onDragLeave={handleContainerDragLeave}
         onDrop={handleDrop}
       >
-        <div style={{ fontSize: 13, color: "#6b6050", fontStyle: "italic", fontFamily: "'Courier Prime',monospace" }}>
+        <div style={{ fontSize: 13, color: "#6b6050", fontStyle: "italic", fontFamily: "'Junicode',sans-serif" }}>
           Click or drag letters here...
         </div>
       </div>
@@ -272,7 +272,7 @@ export function WordBoard({ wordTiles, removeWordTile, reorderWordTiles, insertW
                 <div style={{
                   width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center",
                   background: tt.color, border: `2px solid ${tt.border}`,
-                  borderRadius: 5, fontFamily: "'Playfair Display',serif", fontSize: 22,
+                  borderRadius: 5, fontFamily: "'Junicode',serif", fontSize: 22,
                   fontWeight: 700, color: tt.text, userSelect: "none",
                   cursor: removing ? "default" : "grab",
                   boxShadow: "0 1px 4px rgba(44,36,32,0.10)",
@@ -284,7 +284,7 @@ export function WordBoard({ wordTiles, removeWordTile, reorderWordTiles, insertW
                 <span style={{
                   position: "absolute", bottom: -5, left: -5,
                   background: "#7a6e62", color: "#ffffff", borderRadius: 3, padding: "1px 3px",
-                  fontSize: 7, fontWeight: 700, fontFamily: "'Courier Prime',monospace", lineHeight: 1.2, zIndex: 1,
+                  fontSize: 7, fontWeight: 700, fontFamily: "'Junicode',sans-serif", lineHeight: 1.2, zIndex: 1,
                 }}>{LETTER_SCORES[tile.letter]}</span>
               )}
               {!removing && (
@@ -302,7 +302,7 @@ export function WordBoard({ wordTiles, removeWordTile, reorderWordTiles, insertW
         <button onClick={clearWord} style={{
           marginLeft: 6, padding: "4px 10px", background: "none",
           border: "1px solid rgba(139,115,85,0.25)", color: "#6b6050",
-          borderRadius: 4, cursor: "pointer", fontSize: 10, fontFamily: "'Courier Prime',monospace",
+          borderRadius: 4, cursor: "pointer", fontSize: 10, fontFamily: "'Junicode',sans-serif",
         }}>clear</button>
       </div>
 
@@ -321,7 +321,7 @@ export function WordBoard({ wordTiles, removeWordTile, reorderWordTiles, insertW
             width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center",
             background: (TILE_TYPES[dragState.tileType] || TILE_TYPES.normal).color,
             border: `2px solid ${(TILE_TYPES[dragState.tileType] || TILE_TYPES.normal).border}`,
-            borderRadius: 5, fontFamily: "'Playfair Display',serif", fontSize: 22,
+            borderRadius: 5, fontFamily: "'Junicode',serif", fontSize: 22,
             fontWeight: 700, color: (TILE_TYPES[dragState.tileType] || TILE_TYPES.normal).text,
             boxShadow: "0 4px 12px rgba(44,36,32,0.25)",
             cursor: "grabbing",

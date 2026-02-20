@@ -22,6 +22,7 @@ export function LetterPressTab({
 }) {
   const [qty, setQty] = useState(1);
   const [showInfo, setShowInfo] = useState(false);
+  const [selectedPress, setSelectedPress] = useState(0);
   const le = Object.entries(letters).sort((a,b) => a[0].localeCompare(b[0]));
   const nextPressCost = pressCount < MAX_PRESSES ? PRESS_COSTS[pressCount] : null;
   const nextMgrCost = pressMgrCount < pressCount ? PRESS_MGR_COSTS[pressMgrCount] : null;
@@ -36,28 +37,29 @@ export function LetterPressTab({
   });
 
   return (
-    <div style={{ paddingTop:12 }}>
+    <div style={{ paddingTop:12, position:"relative" }}>
+      {/* Info button — top right */}
+      <button onClick={() => setShowInfo(p => !p)} style={{
+        position:"absolute", top:0, right:0,
+        width:22, height:22, borderRadius:"50%",
+        border:`1.5px solid ${showInfo ? P.ink : P.border}`,
+        background: showInfo ? P.borderLight : "transparent",
+        color: showInfo ? P.ink : P.textSecondary,
+        fontSize:11, fontFamily:"'BLKCHCRY',serif", fontWeight:700,
+        cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
+        padding:0, transition:"all 0.2s",
+      }}>i</button>
+
       {/* Header */}
       <div style={{ textAlign:"center", marginBottom:16 }}>
-        <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:8, marginBottom:2 }}>
-          <div style={{ ...st.heading, fontSize:22, marginBottom:0 }}>Letter Pressing</div>
-          <button onClick={() => setShowInfo(p => !p)} style={{
-            width:22, height:22, borderRadius:"50%",
-            border:`1.5px solid ${showInfo ? P.ink : P.border}`,
-            background: showInfo ? P.borderLight : "transparent",
-            color: showInfo ? P.ink : P.textSecondary,
-            fontSize:11, fontFamily:"'Playfair Display',serif", fontWeight:700,
-            cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
-            padding:0, transition:"all 0.2s",
-          }}>i</button>
-        </div>
+        <div style={{ ...st.heading, fontSize:22, marginBottom:0 }}>Letter Pressing</div>
         <div style={{ ...st.sub, marginBottom:4 }}>{totalLetters}/{maxLetters} letters</div>
       </div>
 
       {/* Info panel */}
       {showInfo && (
         <div style={{ ...st.panel, marginBottom:16 }}>
-          <div style={{ fontSize:13, fontFamily:"'Playfair Display',serif", color:P.textPrimary, fontWeight:700, letterSpacing:1, marginBottom:10 }}>PRESS STATS</div>
+          <div style={{ fontSize:13, fontFamily:"'BLKCHCRY',serif", color:P.textPrimary, fontWeight:700, letterSpacing:1, marginBottom:10 }}>Press Stats</div>
           {presses.map((_, idx) => {
             const pUpg = pressUpgradeLevels[idx] || mkPressUpg();
             const pressInterval = UPGRADES_BY_NAME["Press Speed"].valueFormula(pUpg["Press Speed"] ?? 0);
@@ -66,7 +68,7 @@ export function LetterPressTab({
             const mgr           = hasManager ? PRESS_MANAGERS[idx] : null;
             return (
               <div key={idx} style={{ paddingBottom:8, marginBottom:8, borderBottom: idx < presses.length - 1 ? `1px solid ${P.borderLight}` : "none" }}>
-                <div style={{ fontSize:11, fontFamily:"'Playfair Display',serif", fontWeight:700, color:P.textPrimary, marginBottom:4 }}>Press {idx + 1}</div>
+                <div style={{ fontSize:11, fontFamily:"'BLKCHCRY',serif", fontWeight:700, color:P.textPrimary, marginBottom:4 }}>Press {idx + 1}</div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:"2px 16px" }}>
                   <InfoRow label="Press Time: " value={`${pressInterval.toFixed(1)}s`} />
                   <InfoRow label="Yield: "      value={`×${Math.floor(pressYield)}`} />
@@ -100,7 +102,7 @@ export function LetterPressTab({
       {/* Recent tiles row */}
       {recentTiles.length > 0 && (
         <div style={{ marginBottom:16 }}>
-          <div style={{ fontSize:9, color:P.textMuted, fontFamily:"'Courier Prime',monospace", textTransform:"uppercase", letterSpacing:1.5, textAlign:"center", marginBottom:5 }}>last 10 tiles</div>
+          <div style={{ fontSize:9, color:P.textMuted, fontFamily:"'Junicode',sans-serif", letterSpacing:1, textAlign:"center", marginBottom:5 }}>Last 10 tiles</div>
           <div style={{ display:"flex", justifyContent:"center", flexWrap:"wrap", gap:4, padding:"2px 0" }}>
             {recentTiles.map((tile, ti) => {
               const tt = TILE_TYPES[tile.tileType] || TILE_TYPES.normal;
@@ -114,7 +116,7 @@ export function LetterPressTab({
                     position:"relative", width:30, height:30, borderRadius:4,
                     background:tt.color, border:`1.5px solid ${tt.border}`,
                     display:"flex", alignItems:"center", justifyContent:"center",
-                    fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:700,
+                    fontFamily:"'Junicode',serif", fontSize:14, fontWeight:700,
                     color:tt.text, flexShrink:0,
                   }}>
                   {tile.tileType === "lexicoin" ? <Aperture size={11} /> : tile.letter}
@@ -122,7 +124,7 @@ export function LetterPressTab({
                     <span style={{
                       position:"absolute", bottom:-5, left:"50%", transform:"translateX(-50%)",
                       background:tt.border, color:"#fff", borderRadius:2, padding:"0 2px",
-                      fontSize:6, fontWeight:700, fontFamily:"'Courier Prime',monospace",
+                      fontSize:6, fontWeight:700, fontFamily:"'Junicode',sans-serif",
                       whiteSpace:"nowrap", lineHeight:1.4,
                     }}>{tt.badge}</span>
                   )}
@@ -135,58 +137,74 @@ export function LetterPressTab({
 
       {/* Expand */}
       <div style={st.panel}>
-        <div style={{ fontSize:14, fontFamily:"'Playfair Display',serif", color:P.textPrimary, fontWeight:700, letterSpacing:1, marginBottom:12 }}>EXPAND</div>
-        <div style={{ display:"flex", alignItems:"center", gap:12, padding:10, background:P.surfaceBg, border:`1px solid ${P.border}`, borderRadius:8, marginBottom:8 }}>
+        <div style={{ fontSize:14, fontFamily:"'BLKCHCRY',serif", color:P.textPrimary, fontWeight:700, letterSpacing:1, marginBottom:12 }}>Expand</div>
+        <div style={{ display:"flex", alignItems:"center", gap:12, padding:10, borderRadius:8, marginBottom:8,
+          background: nextPressCost === null ? "#fdf5d0" : P.surfaceBg,
+          border: `1px solid ${nextPressCost === null ? "#dcc878" : P.border}` }}>
           <div style={{ width:36, height:36, borderRadius:8, background:P.panelBg, border:`1.5px solid ${P.border}`, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
             <CaseUpper size={16} strokeWidth={1.5} color={P.textSecondary}/>
           </div>
           <div style={{ flex:1 }}>
-            <div style={{ fontSize:13, color:P.textPrimary, fontFamily:"'Playfair Display',serif", fontWeight:600 }}>New Letter Press</div>
-            <div style={{ fontSize:10, color:P.textMuted, fontFamily:"'Courier Prime',monospace" }}>{pressCount}/{MAX_PRESSES} built</div>
+            <div style={{ fontSize:13, color:P.textPrimary, fontFamily:"'BLKCHCRY',serif", fontWeight:600 }}>{nextPressCost !== null ? "New Letter Press" : "Max Presses Reached"}</div>
+            <div style={{ fontSize:10, color:P.textMuted, fontFamily:"'Junicode',sans-serif" }}>{pressCount}/{MAX_PRESSES} built</div>
           </div>
-          {nextPressCost !== null ? (
-            <button onClick={buyPress} style={{ padding:"6px 14px", background:collectedInk >= nextPressCost ? P.btnActiveBg : P.btnInactiveBg, color:collectedInk >= nextPressCost ? P.btnActiveText : P.btnInactiveText, border:"none", borderRadius:4, cursor:collectedInk >= nextPressCost ? "pointer" : "default", fontSize:11, fontFamily:"'Courier Prime',monospace" }}>
+          {nextPressCost !== null && (
+            <button onClick={buyPress} style={{ padding:"6px 14px", background:collectedInk >= nextPressCost ? P.btnActiveBg : P.btnInactiveBg, color:collectedInk >= nextPressCost ? P.btnActiveText : P.btnInactiveText, border:"none", borderRadius:4, cursor:collectedInk >= nextPressCost ? "pointer" : "default", fontSize:11, fontFamily:"'Junicode',sans-serif" }}>
               {fmt(nextPressCost)} ink
             </button>
-          ) : <span style={{ fontSize:10, color:P.sage, fontFamily:"'Courier Prime',monospace" }}>✓ maxed</span>}
+          )}
         </div>
-        <div style={{ display:"flex", alignItems:"center", gap:12, padding:10, background:P.surfaceBg, border:`1px solid ${P.border}`, borderRadius:8 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12, padding:10, borderRadius:8,
+          background: (!nextMgr && nextMgrCost === null) ? "#fdf5d0" : P.surfaceBg,
+          border: `1px solid ${(!nextMgr && nextMgrCost === null) ? "#dcc878" : P.border}` }}>
           <div style={{ width:36, height:36, borderRadius:8, background:P.panelBg, border:`1.5px solid ${P.border}`, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
             <UserStar size={16} strokeWidth={1.5} color={P.sage}/>
           </div>
           <div style={{ flex:1 }}>
-            <div style={{ fontSize:13, color:P.textPrimary, fontFamily:"'Playfair Display',serif", fontWeight:600 }}>
+            <div style={{ fontSize:13, color:P.textPrimary, fontFamily:"'BLKCHCRY',serif", fontWeight:600 }}>
               {nextMgr ? `Hire: ${nextMgr.name}` : "All Managers Hired"}
             </div>
-            <div style={{ fontSize:10, color:P.textMuted, fontFamily:"'Courier Prime',monospace" }}>
+            <div style={{ fontSize:10, color:P.textMuted, fontFamily:"'Junicode',sans-serif" }}>
               {nextMgr ? nextMgr.flavor : `${pressMgrCount}/${pressMgrCount} managers`}
             </div>
           </div>
-          {nextMgrCost !== null ? (
-            <button onClick={buyPressManager} style={{ padding:"6px 14px", background:collectedInk >= nextMgrCost ? P.btnActiveBg : P.btnInactiveBg, color:collectedInk >= nextMgrCost ? P.btnActiveText : P.btnInactiveText, border:"none", borderRadius:4, cursor:collectedInk >= nextMgrCost ? "pointer" : "default", fontSize:11, fontFamily:"'Courier Prime',monospace" }}>
+          {nextMgrCost !== null && (
+            <button onClick={buyPressManager} style={{ padding:"6px 14px", background:collectedInk >= nextMgrCost ? P.btnActiveBg : P.btnInactiveBg, color:collectedInk >= nextMgrCost ? P.btnActiveText : P.btnInactiveText, border:"none", borderRadius:4, cursor:collectedInk >= nextMgrCost ? "pointer" : "default", fontSize:11, fontFamily:"'Junicode',sans-serif" }}>
               {fmt(nextMgrCost)} ink
             </button>
-          ) : pressMgrCount >= pressCount ? (
-            <span style={{ fontSize:10, color:P.rose, fontFamily:"'Courier Prime',monospace" }}>need press first</span>
-          ) : <span style={{ fontSize:10, color:P.sage, fontFamily:"'Courier Prime',monospace" }}>✓ maxed</span>}
+          )}
         </div>
       </div>
 
       {/* Press Upgrades */}
-      <div style={st.panel}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-          <div style={{ fontSize:10, color:P.textMuted, fontFamily:"'Courier Prime',monospace", textTransform:"uppercase", letterSpacing:2 }}>Press Upgrades</div>
-          <QtySelector qty={qty} onClick={() => setQty(cycleQty(qty, unlockedQtys))} />
-        </div>
-        {presses.map((_, pressIdx) => (
-          <DeviceUpgradeCard key={pressIdx}
-            deviceLabel={`Press ${pressIdx + 1}`}
+      {pressCount > 0 && (
+        <div style={st.panel}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+            <div style={{ fontSize:10, color:P.textMuted, fontFamily:"'Junicode',sans-serif", letterSpacing:1 }}>Press Upgrades</div>
+            {unlockedQtys.length > 1 && <QtySelector qty={qty} onClick={() => setQty(cycleQty(qty, unlockedQtys))} />}
+          </div>
+          {pressCount > 1 && (
+            <div style={{ display:"flex", gap:4, marginBottom:8 }}>
+              {presses.map((_, i) => (
+                <button key={i} onClick={() => setSelectedPress(i)} style={{
+                  padding:"4px 10px", borderRadius:6, border:"none", cursor:"pointer",
+                  fontSize:10, fontFamily:"'Junicode',sans-serif",
+                  background: selectedPress === i ? P.borderLight : "transparent",
+                  color: selectedPress === i ? P.textPrimary : P.textMuted,
+                  fontWeight: selectedPress === i ? 700 : 400,
+                  transition:"all 0.15s",
+                }}>Press {i + 1}</button>
+              ))}
+            </div>
+          )}
+          <DeviceUpgradeCard
+            deviceLabel={`Press ${selectedPress + 1}`}
             upgrades={PRESS_UPGRADE_NAMES.map(n => UPGRADES_BY_NAME[n])}
-            upgradeLevels={pressUpgradeLevels[pressIdx] || mkPressUpg()}
+            upgradeLevels={pressUpgradeLevels[selectedPress] || mkPressUpg()}
             qty={qty} collectedInk={collectedInk}
-            onBuy={(upgrade, count, cost) => buyDeviceUpgrade("press", pressIdx, upgrade, count, cost)} />
-        ))}
-      </div>
+            onBuy={(upgrade, count, cost) => buyDeviceUpgrade("press", selectedPress, upgrade, count, cost)} />
+        </div>
+      )}
 
       {/* Letter inventory */}
       <div style={{ ...st.panel, marginTop:8 }}>

@@ -125,7 +125,7 @@ export function AuthModal({ onLogin, onClose, resetToken = null }) {
         {/* "Sent" confirmation screen */}
         {screen === "sent" ? (
           <div>
-            <div style={{ fontSize: 13, color: P.textSecondary, fontFamily: "'Courier Prime',monospace", lineHeight: 1.6, marginBottom: 20 }}>
+            <div style={{ fontSize: 13, color: P.textSecondary, fontFamily: "'Junicode',sans-serif", lineHeight: 1.6, marginBottom: 20 }}>
               If an account exists for that address, a reset link has been sent. Check your inbox (and spam folder).
             </div>
             <button onClick={goLogin} style={{
@@ -142,14 +142,14 @@ export function AuthModal({ onLogin, onClose, resetToken = null }) {
             {/* Email — shown on login / register / forgot */}
             {screen !== "reset" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <label style={{ fontSize: 11, color: P.textMuted, fontFamily: "'Courier Prime',monospace", letterSpacing: 0.5 }}>EMAIL</label>
+                <label style={{ fontSize: 11, color: P.textMuted, fontFamily: "'Junicode',sans-serif", letterSpacing: 0.5 }}>EMAIL</label>
                 <input
                   type="email" value={email} onChange={e => setEmail(e.target.value)}
                   required autoComplete="email"
                   style={{
                     padding: "10px 12px", borderRadius: 6, border: `1px solid ${P.border}`,
                     background: P.panelBg, color: P.textPrimary,
-                    fontFamily: "'Courier Prime',monospace", fontSize: 13, outline: "none",
+                    fontFamily: "'Junicode',sans-serif", fontSize: 13, outline: "none",
                   }}
                 />
               </div>
@@ -158,7 +158,7 @@ export function AuthModal({ onLogin, onClose, resetToken = null }) {
             {/* Password — shown on login / register / reset (not forgot) */}
             {screen !== "forgot" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <label style={{ fontSize: 11, color: P.textMuted, fontFamily: "'Courier Prime',monospace", letterSpacing: 0.5 }}>
+                <label style={{ fontSize: 11, color: P.textMuted, fontFamily: "'Junicode',sans-serif", letterSpacing: 0.5 }}>
                   {screen === "reset" ? "NEW PASSWORD" : "PASSWORD"}
                 </label>
                 <div style={{ position: "relative" }}>
@@ -171,7 +171,7 @@ export function AuthModal({ onLogin, onClose, resetToken = null }) {
                       width: "100%", boxSizing: "border-box",
                       padding: "10px 38px 10px 12px", borderRadius: 6,
                       border: `1px solid ${P.border}`, background: P.panelBg,
-                      color: P.textPrimary, fontFamily: "'Courier Prime',monospace",
+                      color: P.textPrimary, fontFamily: "'Junicode',sans-serif",
                       fontSize: 13, outline: "none",
                     }}
                   />
@@ -188,7 +188,7 @@ export function AuthModal({ onLogin, onClose, resetToken = null }) {
                   </button>
                 </div>
                 {(tab === "register" || screen === "reset") && (
-                  <div style={{ fontSize: 10, color: P.textMuted, fontFamily: "'Courier Prime',monospace" }}>
+                  <div style={{ fontSize: 10, color: P.textMuted, fontFamily: "'Junicode',sans-serif" }}>
                     Minimum 8 characters
                   </div>
                 )}
@@ -200,7 +200,7 @@ export function AuthModal({ onLogin, onClose, resetToken = null }) {
               <div style={{ textAlign: "right", marginTop: -4 }}>
                 <button
                   type="button" onClick={goForgot}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: P.textMuted, fontFamily: "'Courier Prime',monospace", padding: 0, textDecoration: "underline" }}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: P.textMuted, fontFamily: "'Junicode',sans-serif", padding: 0, textDecoration: "underline" }}
                 >
                   Forgot password?
                 </button>
@@ -211,7 +211,7 @@ export function AuthModal({ onLogin, onClose, resetToken = null }) {
               <div style={{
                 padding: "8px 12px", background: "#3a1a1a", border: "1px solid #8a3030",
                 borderRadius: 6, fontSize: 12, color: "#e07070",
-                fontFamily: "'Courier Prime',monospace",
+                fontFamily: "'Junicode',sans-serif",
               }}>
                 {error}
               </div>
@@ -231,7 +231,7 @@ export function AuthModal({ onLogin, onClose, resetToken = null }) {
             {screen === "forgot" && (
               <button
                 type="button" onClick={goLogin}
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: P.textMuted, fontFamily: "'Courier Prime',monospace", textDecoration: "underline", padding: 0, marginTop: -4 }}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: P.textMuted, fontFamily: "'Junicode',sans-serif", textDecoration: "underline", padding: 0, marginTop: -4 }}
               >
                 Back to sign in
               </button>
@@ -239,7 +239,7 @@ export function AuthModal({ onLogin, onClose, resetToken = null }) {
           </form>
         )}
 
-        <div style={{ marginTop: 16, fontSize: 10, color: P.textMuted, fontFamily: "'Courier Prime',monospace", textAlign: "center", lineHeight: 1.5 }}>
+        <div style={{ marginTop: 16, fontSize: 10, color: P.textMuted, fontFamily: "'Junicode',sans-serif", textAlign: "center", lineHeight: 1.5 }}>
           {footerNote}
         </div>
       </div>

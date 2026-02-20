@@ -61,17 +61,17 @@ export function TutorialWelcomeModal({ onStart, onSkip }) {
         borderRadius:12, padding:"32px 28px", maxWidth:400, width:"100%",
         boxShadow:"0 8px 40px rgba(44,36,32,0.32)", textAlign:"center",
       }}>
-        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:700, letterSpacing:3, color:P.textPrimary, marginBottom:10 }}>
-          LEXICOGRAPHER
+        <div style={{ fontFamily:"'BLKCHCRY',serif", fontSize:22, fontWeight:700, letterSpacing:1, color:P.textPrimary, marginBottom:10 }}>
+          Lexicographer
         </div>
         <div style={{ width:60, height:1, background:P.border, margin:"0 auto 18px" }}/>
-        <p style={{ fontFamily:"'Courier Prime',monospace", fontSize:13, color:P.textSecondary, lineHeight:1.75, margin:"0 0 10px" }}>
+        <p style={{ fontFamily:"'Junicode',sans-serif", fontSize:13, color:P.textSecondary, lineHeight:1.75, margin:"0 0 10px" }}>
           You are a wordsmith. Each round, you collect ink, press letters into being, and inscribe words into your lexicon.
         </p>
-        <p style={{ fontFamily:"'Courier Prime',monospace", fontSize:13, color:P.textSecondary, lineHeight:1.75, margin:"0 0 24px" }}>
+        <p style={{ fontFamily:"'Junicode',sans-serif", fontSize:13, color:P.textSecondary, lineHeight:1.75, margin:"0 0 24px" }}>
           When you're satisfied, you publish — converting your words into Quills, the currency of literary legacy.
         </p>
-        <p style={{ fontFamily:"'Courier Prime',monospace", fontSize:11, color:P.textMuted, marginBottom:24 }}>
+        <p style={{ fontFamily:"'Junicode',sans-serif", fontSize:11, color:P.textMuted, marginBottom:24 }}>
           A short guide will walk you through the basics.
         </p>
         <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
@@ -80,7 +80,7 @@ export function TutorialWelcomeModal({ onStart, onSkip }) {
           </button>
           <button onClick={onSkip} style={{
             background:"none", border:"none", color:P.textMuted,
-            fontFamily:"'Courier Prime',monospace", fontSize:11,
+            fontFamily:"'Junicode',sans-serif", fontSize:11,
             cursor:"pointer", textDecoration:"underline",
           }}>
             Skip Tutorial
@@ -102,17 +102,17 @@ export function TutorialCard({ step, onNext, onSkip, setActiveTab }) {
         boxShadow:"0 4px 20px rgba(44,36,32,0.18)",
       }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
-          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:13, fontWeight:700, color:P.textPrimary, letterSpacing:0.5, lineHeight:1.3 }}>
+          <div style={{ fontFamily:"'BLKCHCRY',serif", fontSize:13, fontWeight:700, color:P.textPrimary, letterSpacing:0.5, lineHeight:1.3 }}>
             {data.title}
           </div>
           <button onClick={onSkip} style={{
             background:"none", border:"none", color:P.textMuted,
-            fontFamily:"'Courier Prime',monospace", fontSize:10,
+            fontFamily:"'Junicode',sans-serif", fontSize:10,
             cursor:"pointer", padding:"0 0 0 8px", flexShrink:0,
           }}>Skip</button>
         </div>
 
-        <div style={{ fontFamily:"'Courier Prime',monospace", fontSize:12, color:P.textSecondary, lineHeight:1.65, marginBottom:14 }}>
+        <div style={{ fontFamily:"'Junicode',sans-serif", fontSize:12, color:P.textSecondary, lineHeight:1.65, marginBottom:14 }}>
           {data.body}
         </div>
 

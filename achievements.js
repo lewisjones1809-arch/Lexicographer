@@ -45,6 +45,21 @@ export const ACHIEVEMENTS = [
       { name: "Archivist",        threshold: 1_000, reward: 100 },
     ],
   },
+  {
+    id: "wildcard_word",
+    unit: "wildcard_letters",
+    visibility: "hidden",
+    levels: [
+      { name: "First Figment",         threshold: 3,  reward: 1  },
+      { name: "Whimsy",                threshold: 4,  reward: 1  },
+      { name: "Daydream",              threshold: 5,  reward: 2  },
+      { name: "Reverie",               threshold: 6,  reward: 3  },
+      { name: "Pure Invention",        threshold: 7,  reward: 5  },
+      { name: "Phantasm",              threshold: 8,  reward: 10 },
+      { name: "Master Illusionist",    threshold: 9,  reward: 15 },
+      { name: "Word of Pure Imagination", threshold: 10, reward: 25 },
+    ],
+  },
 ];
 
 // Returns count of achievements where the current level is claimable but not yet claimed.

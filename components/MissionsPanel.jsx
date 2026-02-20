@@ -43,7 +43,7 @@ export function MissionsTrigger({ onClick, unclaimedCount }) {
           alignItems: "center",
           justifyContent: "center",
           fontSize: 9,
-          fontFamily: "'Courier Prime',monospace",
+          fontFamily: "'Junicode',sans-serif",
           fontWeight: 700,
           color: "#fff",
           padding: "0 2px",
@@ -103,7 +103,7 @@ export function MissionsPanel({ missions, onClaim, onClose }) {
           return (
             <div key={m.id} style={{ ...st.panel, marginBottom: 12 }}>
               <div style={{
-                fontFamily: "'Playfair Display',serif",
+                fontFamily: "'BLKCHCRY',serif",
                 fontSize: 14,
                 fontWeight: 700,
                 color: P.textPrimary,
@@ -112,7 +112,7 @@ export function MissionsPanel({ missions, onClaim, onClose }) {
                 {missionTitle(m)}
               </div>
               <div style={{
-                fontFamily: "'Courier Prime',monospace",
+                fontFamily: "'Junicode',sans-serif",
                 fontSize: 11,
                 color: P.textSecondary,
                 marginBottom: 10,
@@ -138,7 +138,7 @@ export function MissionsPanel({ missions, onClaim, onClose }) {
                 }} />
               </div>
               <div style={{
-                fontFamily: "'Courier Prime',monospace",
+                fontFamily: "'Junicode',sans-serif",
                 fontSize: 10,
                 color: P.textMuted,
                 marginBottom: 12,
@@ -152,7 +152,7 @@ export function MissionsPanel({ missions, onClaim, onClose }) {
                   display: "flex",
                   alignItems: "center",
                   gap: 5,
-                  fontFamily: "'Courier Prime',monospace",
+                  fontFamily: "'Junicode',sans-serif",
                   fontSize: 11,
                   color: P.quill,
                 }}>
@@ -161,7 +161,7 @@ export function MissionsPanel({ missions, onClaim, onClose }) {
                 </div>
                 {m.claimed ? (
                   <span style={{
-                    fontFamily: "'Courier Prime',monospace",
+                    fontFamily: "'Junicode',sans-serif",
                     fontSize: 11,
                     color: P.sage,
                     fontWeight: 700,

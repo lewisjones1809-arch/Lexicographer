@@ -1,4 +1,5 @@
 import { WELL_UPGRADE_NAMES, MGR_UPGRADE_NAMES, PRESS_UPGRADE_NAMES } from "./constants.js";
+import { fmt } from "./gameUtils.js";
 
 // --- DEVICE UPGRADE-LEVEL INITIALISERS ---
 export const mkWellUpg  = () => Object.fromEntries(WELL_UPGRADE_NAMES.map(n => [n, 0]));
@@ -34,11 +35,11 @@ export function calcQtyBuy(upgrade, currentLevel, qty) {
 // --- UPGRADE VALUE FORMATTING ---
 export function fmtUpgradeVal(upgrade, v) {
   const mv = upgrade.maxValue;
-  if (mv.endsWith("/s"))      return v.toFixed(2) + "/s";
+  if (mv.endsWith("/s"))      return fmt(v) + "/s";
   if (mv.endsWith("%"))       return (v * 100).toFixed(1) + "%";
   if (mv.endsWith("x"))       return v.toFixed(2) + "x";
-  if (mv.includes("Letters")) return Math.floor(v) + " Letters";
-  return v.toFixed(2);
+  if (mv.includes("Letters")) return Math.floor(v);
+  return fmt(v);
 }
 
 // --- QTY SELECTOR CYCLE ---

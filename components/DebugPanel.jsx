@@ -7,7 +7,8 @@ export function DebugPanel({
   letters, setLetters,
   setLexicon, setQuills, setWells, setSpecialTiles, setGoldenNotebooks,
   showMsg,
-  scalingA, setScalingA, scalingB, setScalingB
+  scalingA, setScalingA, scalingB, setScalingB,
+  onClose
 }) {
   const [dli, setDli] = useState("");
   const [dia, setDia] = useState("100");
@@ -22,7 +23,10 @@ export function DebugPanel({
 
   return (
     <div style={{ background:"#0a0a0a", border:"1px solid #333", borderRadius:8, padding:14, marginBottom:16 }}>
-      <div style={{ fontSize:12, color:"#0f0", fontFamily:"monospace", marginBottom:12 }}>DEBUG TOOLS</div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+        <div style={{ fontSize:12, color:"#0f0", fontFamily:"monospace" }}>DEBUG TOOLS</div>
+        <button onClick={onClose} style={{ background:"none", border:"none", color:"#888", cursor:"pointer", fontFamily:"monospace", fontSize:14, lineHeight:1, padding:0 }}>✕</button>
+      </div>
 
       <div style={ds.row}>
         <span style={ds.label}>Ink:</span>
