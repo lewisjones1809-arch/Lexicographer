@@ -7,12 +7,12 @@ const router = Router();
 
 // IAP product definitions — price amounts in cents
 const PRODUCTS = {
-  quill_100:         { name: 'Feather Pouch',          amount: 99,   currency: 'usd' },
-  quill_500:         { name: 'Quill Bundle',            amount: 399,  currency: 'usd' },
-  quill_2000:        { name: 'Grand Compendium',        amount: 1299, currency: 'usd' },
-  ink_boost:         { name: 'Ink Surge',               amount: 99,   currency: 'usd' },
-  letter_pack:       { name: 'Letter Loot',             amount: 199,  currency: 'usd' },
-  premium_cosmetics: { name: 'Illuminated Manuscript',  amount: 299,  currency: 'usd' },
+  quill_100:         { name: 'Feather Pouch',          amount: 99,   currency: 'gbp' },
+  quill_500:         { name: 'Quill Bundle',            amount: 399,  currency: 'gbp' },
+  quill_2000:        { name: 'Grand Compendium',        amount: 1299, currency: 'gbp' },
+  ink_boost:         { name: 'Ink Surge',               amount: 99,   currency: 'gbp' },
+  letter_pack:       { name: 'Letter Loot',             amount: 199,  currency: 'gbp' },
+  premium_cosmetics: { name: 'Illuminated Manuscript',  amount: 299,  currency: 'gbp' },
 };
 
 const SPECIAL_TILE_TYPES = ['DL', 'TL', 'DW', 'TW', '★', '◈'];
