@@ -46,24 +46,24 @@ export const TILE_TYPES = {
 };
 
 export const COVERS = [
-  { id:"classic",   name:"Classic Leather",  color:"#5c3a1e", accent:"#c8a96e", pattern:"none",       mult:1.0,  cost:0,   currency:"free"   },
-  { id:"midnight",  name:"Midnight Blue",    color:"#1a2744", accent:"#7090c0", pattern:"none",       mult:1.05, cost:20,  currency:"quills" },
-  { id:"forest",    name:"Forest Green",     color:"#1e3a2a", accent:"#6a9960", pattern:"none",       mult:1.05, cost:20,  currency:"quills" },
-  { id:"royal",     name:"Royal Crimson",    color:"#4a1a1a", accent:"#d4726a", pattern:"none",       mult:1.1,  cost:50,  currency:"quills" },
-  { id:"gilded",    name:"Gilded Edition",   color:"#2a2010", accent:"#d4a050", pattern:"gold-border",mult:1.15, cost:100, currency:"quills" },
-  { id:"arcane",    name:"Arcane Tome",      color:"#1a102a", accent:"#9070c0", pattern:"sigils",     mult:1.2,  cost:200, currency:"quills" },
-  { id:"celestial", name:"Celestial Atlas",  color:"#0a0a1e", accent:"#c0c8e8", pattern:"stars",      mult:1.25, cost:500, currency:"quills" },
-  { id:"obsidian",  name:"Obsidian Codex",  color:"#0a0806", accent:"#d4a860", pattern:"none",       mult:1.3,  cost:0,   currency:"iap",    premiumOnly:true  },
+  { id:"classic",   name:"Classic Leather",  color:"#5c3a1e", accent:"#c8a96e", pattern:"none",       mult:1.0,  cost:0,  currency:"free"      },
+  { id:"midnight",  name:"Midnight Blue",    color:"#1a2744", accent:"#7090c0", pattern:"none",       mult:1.05, cost:1,  currency:"notebooks" },
+  { id:"forest",    name:"Forest Green",     color:"#1e3a2a", accent:"#6a9960", pattern:"none",       mult:1.05, cost:1,  currency:"notebooks" },
+  { id:"royal",     name:"Royal Crimson",    color:"#4a1a1a", accent:"#d4726a", pattern:"none",       mult:1.1,  cost:3,  currency:"notebooks" },
+  { id:"gilded",    name:"Gilded Edition",   color:"#2a2010", accent:"#d4a050", pattern:"gold-border",mult:1.15, cost:5,  currency:"notebooks" },
+  { id:"arcane",    name:"Arcane Tome",      color:"#1a102a", accent:"#9070c0", pattern:"sigils",     mult:1.2,  cost:10, currency:"notebooks" },
+  { id:"celestial", name:"Celestial Atlas",  color:"#0a0a1e", accent:"#c0c8e8", pattern:"stars",      mult:1.25, cost:25, currency:"notebooks" },
+  { id:"obsidian",  name:"Obsidian Codex",   color:"#0a0806", accent:"#d4a860", pattern:"none",       mult:1.3,  cost:0,  currency:"iap",    premiumOnly:true  },
 ];
 
 export const PAGE_STYLES = [
-  { id:"parchment", name:"Parchment",    bg:"#f5ecd7", text:"#2a1f14", accent:"#8b7355", mult:1.0,  cost:0,   currency:"free"   },
-  { id:"cream",     name:"Cream Linen",  bg:"#faf6ee", text:"#3a3020", accent:"#b0a080", mult:1.02, cost:15,  currency:"quills" },
-  { id:"aged",      name:"Aged Vellum",  bg:"#e8d8b8", text:"#3a2a1a", accent:"#9a7a50", mult:1.05, cost:30,  currency:"quills" },
-  { id:"dark",      name:"Dark Scholar", bg:"#1e1a16", text:"#c8b898", accent:"#8b7355", mult:1.08, cost:60,  currency:"quills" },
-  { id:"blue",      name:"Blueprint",    bg:"#0e1a2e", text:"#8ab4e0", accent:"#4a7ab0", mult:1.1,  cost:100, currency:"quills" },
-  { id:"rose",       name:"Rose Quartz",   bg:"#2a1a1e", text:"#e0b0b8", accent:"#c07880", mult:1.12, cost:150, currency:"quills" },
-  { id:"gilded_folio",name:"Gilded Folio", bg:"#0e0c08", text:"#d4c08a", accent:"#d4a860", mult:1.15, cost:0,   currency:"iap",   premiumOnly:true  },
+  { id:"parchment",   name:"Parchment",    bg:"#f5ecd7", text:"#2a1f14", accent:"#8b7355", mult:1.0,  cost:0,  currency:"free"      },
+  { id:"cream",       name:"Cream Linen",  bg:"#faf6ee", text:"#3a3020", accent:"#b0a080", mult:1.02, cost:1,  currency:"notebooks" },
+  { id:"aged",        name:"Aged Vellum",  bg:"#e8d8b8", text:"#3a2a1a", accent:"#9a7a50", mult:1.05, cost:2,  currency:"notebooks" },
+  { id:"dark",        name:"Dark Scholar", bg:"#1e1a16", text:"#c8b898", accent:"#8b7355", mult:1.08, cost:3,  currency:"notebooks" },
+  { id:"blue",        name:"Blueprint",    bg:"#0e1a2e", text:"#8ab4e0", accent:"#4a7ab0", mult:1.1,  cost:5,  currency:"notebooks" },
+  { id:"rose",        name:"Rose Quartz",  bg:"#2a1a1e", text:"#e0b0b8", accent:"#c07880", mult:1.12, cost:8,  currency:"notebooks" },
+  { id:"gilded_folio",name:"Gilded Folio", bg:"#0e0c08", text:"#d4c08a", accent:"#d4a860", mult:1.15, cost:0,  currency:"iap",   premiumOnly:true  },
 ];
 
 export const TABS = [
@@ -98,10 +98,10 @@ export const UPGRADE_SHORT_NAMES = {
 // --- IN-APP PURCHASE PRODUCTS ---
 // stripePriceId is filled in after creating products in the Stripe dashboard
 export const IAP_PRODUCTS = [
-  { id:"quill_100",         name:"Feather Pouch",         desc:"100 quills to spend in the shop",                 price:"$0.99",  emoji:"🪶", stripePriceId:"" },
-  { id:"quill_500",         name:"Quill Bundle",           desc:"500 quills — great value",                        price:"$3.99",  emoji:"📦", stripePriceId:"" },
-  { id:"quill_2000",        name:"Grand Compendium",       desc:"2,000 quills — best value",                       price:"$12.99", emoji:"📚", stripePriceId:"" },
-  { id:"ink_boost",         name:"Ink Surge",              desc:"Instantly fills all your ink wells to maximum",   price:"$0.99",  emoji:"💧", stripePriceId:"" },
-  { id:"letter_pack",       name:"Letter Loot",            desc:"10 random rare special tiles added to inventory", price:"$1.99",  emoji:"🎲", stripePriceId:"" },
-  { id:"premium_cosmetics", name:"Illuminated Manuscript", desc:"Unlock Obsidian Codex cover (×1.30) and Gilded Folio pages (×1.15) — exclusive to supporters", price:"$2.99", emoji:"✨", stripePriceId:"" },
+  { id:"quill_100",         name:"Feather Pouch",         desc:"100 quills to spend in the shop",                 price:"£0.99",  emoji:"🪶", stripePriceId:"" },
+  { id:"quill_500",         name:"Quill Bundle",           desc:"500 quills — great value",                        price:"£3.99",  emoji:"📦", stripePriceId:"" },
+  { id:"quill_2000",        name:"Grand Compendium",       desc:"2,000 quills — best value",                       price:"£12.99", emoji:"📚", stripePriceId:"" },
+  { id:"ink_boost",         name:"Ink Surge",              desc:"Instantly fills all your ink wells to maximum",   price:"£0.99",  emoji:"💧", stripePriceId:"" },
+  { id:"letter_pack",       name:"Letter Loot",            desc:"10 random rare special tiles added to inventory", price:"£1.99",  emoji:"🎲", stripePriceId:"" },
+  { id:"premium_cosmetics", name:"Illuminated Manuscript", desc:"Unlock Obsidian Codex cover (×1.30) and Gilded Folio pages (×1.15) — exclusive to supporters", price:"£2.99", emoji:"✨", stripePriceId:"" },
 ];

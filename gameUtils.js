@@ -214,6 +214,70 @@ export function getAvailableLetterCounts(letters, specialTiles, wordInput) {
   return result;
 }
 
+// --- OFFLINE PROGRESS SIMULATION ---
+// Simulates what managed wells and presses would have produced while the player was away.
+// snapshot: saved state object from localStorage. elapsedSeconds: time away (capped by caller).
+export function computeOfflineProgress(snapshot, elapsedSeconds) {
+  const {
+    wells = [], wellMgrCount = 0, wellMgrEnabled = [],
+    wellUpgradeLevels = [],
+    presses = [], pressMgrCount = 0, pressUpgradeLevels = [],
+    totalLetters = 0, effectiveInkMult = 1, effectiveMaxLetters = 50,
+  } = snapshot;
+
+  let inkEarned = 0;
+  const newNormals = {};
+  const newSpecials = [];
+
+  // Managed wells accumulate ink at fill rate continuously (manager auto-collects when full).
+  // Total throughput = fillRate × inkMult × time, regardless of starting fill level.
+  for (let i = 0; i < wells.length; i++) {
+    if (i >= wellMgrCount || !wellMgrEnabled[i]) continue;
+    const wUpg = wellUpgradeLevels[i] || {};
+    const fillRate = UPGRADES_BY_NAME["Well Speed"].valueFormula(wUpg["Well Speed"] ?? 0);
+    inkEarned += fillRate * effectiveInkMult * elapsedSeconds;
+  }
+
+  // Managed presses complete full cycles. Letters are capped at effectiveMaxLetters.
+  let letterSlots = Math.max(0, effectiveMaxLetters - totalLetters);
+  for (let i = 0; i < presses.length; i++) {
+    if (i >= pressMgrCount || letterSlots <= 0) break;
+    const pUpg = pressUpgradeLevels[i] || {};
+    const pressInterval = UPGRADES_BY_NAME["Press Speed"].valueFormula(pUpg["Press Speed"] ?? 0);
+    const pressYield    = UPGRADES_BY_NAME["Press Yield"].valueFormula(pUpg["Press Yield"] ?? 0);
+    const tileProbs     = computeEffectiveTileProbs(pUpg);
+
+    // Account for a cycle already in progress when the player left.
+    const press = presses[i] || {};
+    let remaining = elapsedSeconds;
+    let cycles = 0;
+    if (press.running && press.timer != null) {
+      if (remaining >= press.timer) { cycles = 1; remaining -= press.timer; }
+      else { continue; } // cycle won't finish offline
+    }
+    cycles += Math.floor(remaining / pressInterval);
+
+    const yieldCount = Math.floor(pressYield);
+    for (let c = 0; c < cycles && letterSlots > 0; c++) {
+      for (let y = 0; y < yieldCount && letterSlots > 0; y++) {
+        const l = randomLetter();
+        const tileType = rollTileType(tileProbs);
+        if (tileType === "normal") {
+          newNormals[l] = (newNormals[l] || 0) + 1;
+        } else if (tileType === "lexicoin") {
+          newSpecials.push({ id: nextTileId(), letter: null, type: "lexicoin" });
+        } else {
+          newSpecials.push({ id: nextTileId(), letter: l, type: tileType });
+        }
+        letterSlots--;
+      }
+    }
+  }
+
+  const totalNewLetters = Object.values(newNormals).reduce((a, b) => a + b, 0) + newSpecials.length;
+  return { inkEarned, newNormals, newSpecials, totalNewLetters };
+}
+
 // --- PUBLISH CALCULATION ---
 export function calculateQuillsBreakdown(entries, coverMult, pageMult, A = 2, B = 0.5) {
   const wordBonus = A * entries.length;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Feather, HandCoins, CaseUpper, Droplet, Keyboard, Brain, Zap, Lock, Sparkles, Layers } from "lucide-react";
+import { Feather, HandCoins, CaseUpper, Droplet, Keyboard, Brain, Zap, Lock, Sparkles, Layers, BookMarked } from "lucide-react";
 import { P, st } from "../styles.js";
 import { IAP_PRODUCTS } from "../constants.js";
 
@@ -40,7 +40,7 @@ function getUpgCard(upg, level) {
   };
 }
 
-export function ShopTab({ quills, ownedCovers, ownedPages, activeCoverId, activePageId, setActiveCoverId, setActivePageId, buyItem, showMsg, permUpgradeLevels, buyPermUpgrade, unlockedQtys = [1], currentUser, onShowAuth, onBuyIap }) {
+export function ShopTab({ quills, goldenNotebooks, ownedCovers, ownedPages, activeCoverId, activePageId, setActiveCoverId, setActivePageId, buyItem, showMsg, permUpgradeLevels, buyPermUpgrade, unlockedQtys = [1], currentUser, onShowAuth, onBuyIap }) {
   const [shopTab, setShopTab] = useState("design");
   const [qty, setQty] = useState(1);
   const shopTabs = [
@@ -152,11 +152,15 @@ export function ShopTab({ quills, ownedCovers, ownedPages, activeCoverId, active
         <div>
           {/* Covers */}
           <div style={st.panel}>
-            <div style={{ fontSize:14, fontFamily:"'Playfair Display',serif", color:P.textPrimary, fontWeight:700, letterSpacing:1, marginBottom:12 }}>COVERS</div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+              <div style={{ fontSize:14, fontFamily:"'Playfair Display',serif", color:P.textPrimary, fontWeight:700, letterSpacing:1 }}>COVERS</div>
+              <div style={{ fontSize:11, color:P.quill, fontFamily:"'Courier Prime',monospace", display:"flex", alignItems:"center", gap:3 }}><BookMarked size={11}/> {goldenNotebooks}</div>
+            </div>
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {COVERS.filter(c => !c.premiumOnly || ownedCovers.includes(c.id)).map(c => {
                 const owned = ownedCovers.includes(c.id);
                 const active = activeCoverId === c.id;
+                const canAfford = goldenNotebooks >= c.cost;
                 return (
                   <div key={c.id} style={{
                     display:"flex", alignItems:"center", gap:12, padding:10,
@@ -175,8 +179,8 @@ export function ShopTab({ quills, ownedCovers, ownedPages, activeCoverId, active
                       active ? <span style={{ fontSize:10, color:P.sage, fontFamily:"'Courier Prime',monospace" }}>✓ active</span>
                       : <button onClick={() => setActiveCoverId(c.id)} style={{ padding:"5px 12px", background:P.btnInactiveBg, border:"none", color:P.btnInactiveText, borderRadius:4, cursor:"pointer", fontSize:10, fontFamily:"'Courier Prime',monospace" }}>Equip</button>
                     ) : (
-                      <button onClick={() => buyItem("cover", c)} style={{ padding:"5px 12px", background:quills>=c.cost?P.btnActiveBg:P.btnInactiveBg, color:quills>=c.cost?P.btnActiveText:P.btnInactiveText, border:"none", borderRadius:4, cursor:quills>=c.cost?"pointer":"default", fontSize:10, fontFamily:"'Courier Prime',monospace", opacity:quills>=c.cost?1:0.5 }}>
-                        <Feather size={9} style={{verticalAlign:"middle", marginRight:2}}/>{c.cost}
+                      <button onClick={() => buyItem("cover", c)} style={{ padding:"5px 12px", background:canAfford?P.btnActiveBg:P.btnInactiveBg, color:canAfford?P.btnActiveText:P.btnInactiveText, border:"none", borderRadius:4, cursor:canAfford?"pointer":"default", fontSize:10, fontFamily:"'Courier Prime',monospace", opacity:canAfford?1:0.5 }}>
+                        <BookMarked size={9} style={{verticalAlign:"middle", marginRight:2}}/>{c.cost}
                       </button>
                     )}
                   </div>
@@ -187,11 +191,15 @@ export function ShopTab({ quills, ownedCovers, ownedPages, activeCoverId, active
 
           {/* Page styles */}
           <div style={st.panel}>
-            <div style={{ fontSize:14, fontFamily:"'Playfair Display',serif", color:P.textPrimary, fontWeight:700, letterSpacing:1, marginBottom:12 }}>PAGE STYLES</div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+              <div style={{ fontSize:14, fontFamily:"'Playfair Display',serif", color:P.textPrimary, fontWeight:700, letterSpacing:1 }}>PAGE STYLES</div>
+              <div style={{ fontSize:11, color:P.quill, fontFamily:"'Courier Prime',monospace", display:"flex", alignItems:"center", gap:3 }}><BookMarked size={11}/> {goldenNotebooks}</div>
+            </div>
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {PAGE_STYLES.filter(p => !p.premiumOnly || ownedPages.includes(p.id)).map(p => {
                 const owned = ownedPages.includes(p.id);
                 const active = activePageId === p.id;
+                const canAfford = goldenNotebooks >= p.cost;
                 return (
                   <div key={p.id} style={{
                     display:"flex", alignItems:"center", gap:12, padding:10,
@@ -210,8 +218,8 @@ export function ShopTab({ quills, ownedCovers, ownedPages, activeCoverId, active
                       active ? <span style={{ fontSize:10, color:P.sage, fontFamily:"'Courier Prime',monospace" }}>✓ active</span>
                       : <button onClick={() => setActivePageId(p.id)} style={{ padding:"5px 12px", background:P.btnInactiveBg, border:"none", color:P.btnInactiveText, borderRadius:4, cursor:"pointer", fontSize:10, fontFamily:"'Courier Prime',monospace" }}>Equip</button>
                     ) : (
-                      <button onClick={() => buyItem("page", p)} style={{ padding:"5px 12px", background:quills>=p.cost?P.btnActiveBg:P.btnInactiveBg, color:quills>=p.cost?P.btnActiveText:P.btnInactiveText, border:"none", borderRadius:4, cursor:quills>=p.cost?"pointer":"default", fontSize:10, fontFamily:"'Courier Prime',monospace", opacity:quills>=p.cost?1:0.5 }}>
-                        <Feather size={9} style={{verticalAlign:"middle", marginRight:2}}/>{p.cost}
+                      <button onClick={() => buyItem("page", p)} style={{ padding:"5px 12px", background:canAfford?P.btnActiveBg:P.btnInactiveBg, color:canAfford?P.btnActiveText:P.btnInactiveText, border:"none", borderRadius:4, cursor:canAfford?"pointer":"default", fontSize:10, fontFamily:"'Courier Prime',monospace", opacity:canAfford?1:0.5 }}>
+                        <BookMarked size={9} style={{verticalAlign:"middle", marginRight:2}}/>{p.cost}
                       </button>
                     )}
                   </div>

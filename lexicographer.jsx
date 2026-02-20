@@ -14,6 +14,7 @@ import {
   randomLetter, fmt, rollCrit, computeEffectiveTileProbs, rollTileType,
   assignTilesFromBoard, scoreWordWithTiles, calculateQuillsBreakdown,
   canSupplyLetter, nextTileId, generateNonWord, applyMonkeyTileBonuses,
+  computeOfflineProgress,
 } from "./gameUtils.js";
 import { mkWellUpg, mkMgrUpg, mkPressUpg } from "./upgradeUtils.js";
 import { PERM_UPGRADES } from "./permanentUpgrades.js";
@@ -24,6 +25,7 @@ import { ShopTab } from "./components/ShopTab.jsx";
 import { LibraryTab } from "./components/LibraryTab.jsx";
 import { DebugPanel } from "./components/DebugPanel.jsx";
 import { TUTORIAL_TAB_HINTS, TutorialWelcomeModal, TutorialCard } from "./components/Tutorial.jsx";
+import { OfflineRewardModal } from "./components/OfflineRewardModal.jsx";
 import { MissionsTrigger, MissionsPanel } from "./components/MissionsPanel.jsx";
 import { generateMissions, loadDailyMissions, saveDailyMissions, advanceProgress } from "./missions.js";
 import { AuthModal } from "./components/AuthModal.jsx";
@@ -180,6 +182,10 @@ export default function Lexicographer() {
     });
   }, [permUpgradeLevels]);
 
+  // Offline progress
+  const [offlineReward, setOfflineReward] = useState(null);
+  const pendingOfflineRef = useRef(null); // { elapsed } — set at mount, consumed by applyServerState
+
   // procMonkey via ref so the interval doesn't go stale
   const procMonkeyRef = useRef(null);
   const monkeySearchTimeRef = useRef(300);
@@ -251,10 +257,38 @@ export default function Lexicographer() {
     setActivePageId(state.activePageId ?? 'parchment');
     setPermUpgradeLevels(state.permUpgradeLevels ?? {});
     const vs = state.volatileState;
+
+    // Compute offline gains using server-restored volatile state + elapsed from mount ref.
+    // Server state is synced on beforeunload so it matches the offline snapshot timestamp.
+    let offline = null;
+    const pending = pendingOfflineRef.current;
+    pendingOfflineRef.current = null; // consume — prevents double-apply
+    if (pending?.elapsed && vs) {
+      const permLevels = state.permUpgradeLevels || {};
+      const inkMult  = Math.pow(1.01, permLevels.ink_multiplier || 0);
+      const maxLett  = MAX_LETTERS + (permLevels.max_letters || 0) * 10;
+      const totLett  = Object.values(vs.letters || {}).reduce((a, b) => a + b, 0) + (vs.specialTiles || []).length;
+      const result   = computeOfflineProgress({
+        wells: vs.wells || [], wellMgrCount: vs.wellMgrCount || 0,
+        wellMgrEnabled: vs.wellMgrEnabled || [],
+        wellUpgradeLevels: vs.wellUpgradeLevels || [],
+        presses: vs.presses || [], pressMgrCount: vs.pressMgrCount || 0,
+        pressUpgradeLevels: vs.pressUpgradeLevels || [],
+        totalLetters: totLett, effectiveInkMult: inkMult, effectiveMaxLetters: maxLett,
+      }, pending.elapsed);
+      if (result.inkEarned > 0 || result.totalNewLetters > 0) {
+        offline = { elapsedSeconds: pending.elapsed, ...result };
+      }
+    }
+
     if (vs) {
-      // Returning user — restore full game state, fold in any pending rewards
-      setCollectedInk((vs.collectedInk ?? 0) + (state.inkBoostPending ? 5000 : 0));
-      setLetters(vs.letters ?? {});
+      // Returning user — restore full game state, fold in pending rewards + offline gains
+      const baseLett = { ...(vs.letters ?? {}) };
+      if (offline?.newNormals) {
+        for (const [l, cnt] of Object.entries(offline.newNormals)) baseLett[l] = (baseLett[l] || 0) + cnt;
+      }
+      setCollectedInk((vs.collectedInk ?? 0) + (state.inkBoostPending ? 5000 : 0) + (offline?.inkEarned ?? 0));
+      setLetters(baseLett);
       setWordTiles(vs.wordTiles ?? []);
       setLexicon(vs.lexicon ?? []);
       setWellCount(vs.wellCount ?? 1);
@@ -264,7 +298,7 @@ export default function Lexicographer() {
       setPressCount(vs.pressCount ?? 0);
       setPresses(vs.presses ?? []);
       setPressMgrCount(vs.pressMgrCount ?? 0);
-      setSpecialTiles([...(vs.specialTiles ?? []), ...(state.letterPackPending ?? [])]);
+      setSpecialTiles([...(vs.specialTiles ?? []), ...(state.letterPackPending ?? []), ...(offline?.newSpecials ?? [])]);
       setWellUpgradeLevels(vs.wellUpgradeLevels?.length ? vs.wellUpgradeLevels : [mkWellUpg()]);
       setMgrUpgradeLevels(vs.mgrUpgradeLevels ?? []);
       setPressUpgradeLevels(vs.pressUpgradeLevels ?? []);
@@ -274,6 +308,8 @@ export default function Lexicographer() {
       if (state.inkBoostPending) setCollectedInk(p => p + 5000);
       if (state.letterPackPending?.length > 0) setSpecialTiles(prev => [...prev, ...state.letterPackPending]);
     }
+
+    if (offline) setOfflineReward(offline);
     // Unsuppress sync after React has flushed the batch
     setTimeout(() => { suppressSyncRef.current = false; }, 200);
   }, []);
@@ -614,6 +650,68 @@ export default function Lexicographer() {
     saveDailyMissions(missions, new Date().toISOString().slice(0, 10));
   }, [missions]);
 
+  // --- OFFLINE PROGRESS: load saved snapshot at mount ---
+  // For guests (no token): apply gains immediately on top of fresh state.
+  // For auth users: store elapsed in pendingOfflineRef; applyServerState will consume it.
+  useEffect(() => {
+    const savedTs   = localStorage.getItem('lexLastSeen');
+    const savedSnap = localStorage.getItem('lexOfflineSnapshot');
+    localStorage.removeItem('lexLastSeen');
+    localStorage.removeItem('lexOfflineSnapshot');
+    if (!savedTs) return;
+    const elapsed = Math.min(Math.floor((Date.now() - parseInt(savedTs, 10)) / 1000), 8 * 3600);
+    if (elapsed < 60) return;
+    let snapshot = null;
+    try { if (savedSnap) snapshot = JSON.parse(savedSnap); } catch {}
+    // Store for auth path (applyServerState will consume this)
+    pendingOfflineRef.current = { elapsed, snapshot };
+    // Guest path: no token means no applyServerState will run, so apply now
+    if (!localStorage.getItem('lexToken') && snapshot) {
+      const result = computeOfflineProgress(snapshot, elapsed);
+      if (result.inkEarned > 0 || result.totalNewLetters > 0) {
+        setCollectedInk(p => p + result.inkEarned);
+        if (result.totalNewLetters > 0) {
+          setLetters(p => {
+            const next = { ...p };
+            for (const [l, cnt] of Object.entries(result.newNormals)) next[l] = (next[l] || 0) + cnt;
+            return next;
+          });
+          setSpecialTiles(p => [...p, ...result.newSpecials]);
+        }
+        setOfflineReward({ elapsedSeconds: elapsed, ...result });
+      }
+      pendingOfflineRef.current = null; // consumed
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // --- OFFLINE PROGRESS: save snapshot on page hide / tab switch ---
+  useEffect(() => {
+    const save = () => {
+      const vs         = syncStateRef.current?.volatileState;
+      const permLevels = syncStateRef.current?.permUpgradeLevels || {};
+      localStorage.setItem('lexLastSeen', Date.now().toString());
+      if (!vs) return;
+      const inkMult    = Math.pow(1.01, permLevels.ink_multiplier || 0);
+      const maxLett    = MAX_LETTERS + (permLevels.max_letters || 0) * 10;
+      const totalLetters = Object.values(vs.letters || {}).reduce((a, b) => a + b, 0) + (vs.specialTiles || []).length;
+      localStorage.setItem('lexOfflineSnapshot', JSON.stringify({
+        wells: vs.wells || [], wellMgrCount: vs.wellMgrCount || 0,
+        wellMgrEnabled: vs.wellMgrEnabled || [],
+        wellUpgradeLevels: vs.wellUpgradeLevels || [],
+        presses: vs.presses || [], pressMgrCount: vs.pressMgrCount || 0,
+        pressUpgradeLevels: vs.pressUpgradeLevels || [],
+        totalLetters, effectiveInkMult: inkMult, effectiveMaxLetters: maxLett,
+      }));
+    };
+    const visHandler = () => { if (document.visibilityState === 'hidden') save(); };
+    window.addEventListener('beforeunload', save);
+    document.addEventListener('visibilitychange', visHandler);
+    return () => {
+      window.removeEventListener('beforeunload', save);
+      document.removeEventListener('visibilitychange', visHandler);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!showSettings) return;
     const handler = (e) => {
@@ -753,10 +851,6 @@ export default function Lexicographer() {
     setPressMgrCount(0);
     setRecentTiles([]);
     setPressEjects({});
-    setOwnedCovers(prev => ['classic', ...prev.filter(id => COVERS.find(c => c.id === id)?.premiumOnly)]);
-    setOwnedPages(prev => ['parchment', ...prev.filter(id => PAGE_STYLES.find(p => p.id === id)?.premiumOnly)]);
-    setActiveCoverId(prev => COVERS.find(c => c.id === prev)?.premiumOnly ? prev : 'classic');
-    setActivePageId(prev => PAGE_STYLES.find(p => p.id === prev)?.premiumOnly ? prev : 'parchment');
     setWellUpgradeLevels([mkWellUpg()]);
     setMgrUpgradeLevels([]);
     setPressUpgradeLevels([]);
@@ -779,8 +873,8 @@ export default function Lexicographer() {
   const clearPressEject = (idx) => setPressEjects(p => { const n = {...p}; delete n[idx]; return n; });
 
   const buyItem = (type, item) => {
-    if(quills < item.cost){showMsg("Not enough quills!");return;}
-    setQuills(p => p - item.cost);
+    if(goldenNotebooks < item.cost){showMsg("Not enough golden notebooks!");return;}
+    setGoldenNotebooks(p => p - item.cost);
     if(type === "cover"){setOwnedCovers(p=>[...p,item.id]);setActiveCoverId(item.id);showMsg(`Unlocked "${item.name}"!`);}
     else{setOwnedPages(p=>[...p,item.id]);setActivePageId(item.id);showMsg(`Unlocked "${item.name}"!`);}
   };
@@ -944,7 +1038,8 @@ export default function Lexicographer() {
         />}
 
         {activeTab==="shop" && <ShopTab
-          quills={quills} ownedCovers={ownedCovers} ownedPages={ownedPages}
+          quills={quills} goldenNotebooks={goldenNotebooks}
+          ownedCovers={ownedCovers} ownedPages={ownedPages}
           activeCoverId={activeCoverId} activePageId={activePageId}
           setActiveCoverId={setActiveCoverId} setActivePageId={setActivePageId}
           buyItem={buyItem} showMsg={showMsg}
@@ -1077,6 +1172,10 @@ export default function Lexicographer() {
           onClose={() => { setShowAuthModal(false); setAuthResetToken(null); }}
           resetToken={authResetToken}
         />
+      )}
+
+      {offlineReward && (
+        <OfflineRewardModal reward={offlineReward} onClose={() => setOfflineReward(null)} />
       )}
 
       {tutorialActive && tutorialStep === 0 && (
