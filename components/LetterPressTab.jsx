@@ -54,7 +54,7 @@ export function LetterPressTab({
       </div>
 
       <div className="lex-lexicon-outer">
-        {/* Left column: info + press mini-cards + recent tiles */}
+        {/* Left column: info + press mini-cards + recent tiles + inventory */}
         <div className="lex-book-col">
           {/* Info panel */}
           {showInfo && (

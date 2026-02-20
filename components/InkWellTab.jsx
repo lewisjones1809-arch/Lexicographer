@@ -86,7 +86,6 @@ export function InkWellTab({
               const isBuySlot = idx === wellCount;
 
               const card = isBuySlot ? (
-                /* Buy-next-well placeholder */
                 <div onClick={canAffordWell ? buyWell : undefined} style={{
                   width:100, flexShrink:0, cursor: canAffordWell ? "pointer" : "default",
                   opacity: canAffordWell ? 1 : 0.55,
@@ -118,7 +117,6 @@ export function InkWellTab({
                   <div style={{ height:15 }}/>{/* spacer matching fill-rate line */}
                 </div>
               ) : (
-                /* Real well */
                 <WellMiniCard well={wells[idx]} idx={idx}
                   wUpg={wellUpgradeLevels[idx] || mkWellUpg()}
                   hasManager={!!wellMgrOwned[idx]}
@@ -198,7 +196,7 @@ export function InkWellTab({
               qty={qty} collectedInk={collectedInk}
               onBuy={(upgrade, count, cost) => buyDeviceUpgrade("well", selectedWell, upgrade, count, cost)} />
 
-            {/* Manager tabs + upgrades */}
+            {/* Manager upgrades */}
             {ownedMgrIndices.length > 0 && (
               <>
                 <div style={{ borderTop:`1px solid ${P.borderLight}`, margin:"16px 0 12px" }} />
