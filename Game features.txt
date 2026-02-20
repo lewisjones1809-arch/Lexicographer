@@ -2,19 +2,10 @@ Game features:
 
 Rework well and press costs and scaling
 Refine tutorial flow
-Make design bonuses stack even when not equipped
-Add quill upgrades
-Add IAPs
+Fine tune quill upgrades
 Slow down the speed of getting quills
 
 Quill Upgrades:
-
-Unlock 5x buy (1 quill) - unlocks 5x buy option
-Unlock 10x buy (5 quills) - unlocks 10x buy option, requires 5x buy to be bought
-Unlock 100x buy (10 quills) - unlocks 100x buy option, requires 10x buy to be bought
-Unlock max buy (25 quills) - unlocks Max buy option, requires 100x buy to be bought
-
-Max Letters (5 quills) - increases max letter storage by 10, can be upgraded further up to 1,000 letters
 
 Monkey with a typewriter (100 quills) - adds words from previous lexicons to current one (with base tile scoring), base chance of 10% to add a word every 5 minutes, can be upgraded further with quills to get to 100% chance every 10 seconds.
 
@@ -33,11 +24,10 @@ Should outline the drag and drop and click functionalities
 
 
 Bugs:
-Sample words button in debug menu doesnt work - makes game white screen
-tap anywhere to continue after publishing doesnt close if you tap the pop up
-Need to have a second confirmation stage for publication
+When you go off the lexicon tab for a while and come back all of the monkeys procs have seemingly been stored and all go off creating a massive mess
 
 Other bits to add:
+
 
 
 

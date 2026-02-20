@@ -98,10 +98,10 @@ export const UPGRADE_SHORT_NAMES = {
 // --- IN-APP PURCHASE PRODUCTS ---
 // stripePriceId is filled in after creating products in the Stripe dashboard
 export const IAP_PRODUCTS = [
-  { id:"quill_100",         name:"Feather Pouch",         desc:"100 quills to spend in the shop",                 price:"£0.99",  emoji:"🪶", stripePriceId:"" },
-  { id:"quill_500",         name:"Quill Bundle",           desc:"500 quills — great value",                        price:"£3.99",  emoji:"📦", stripePriceId:"" },
-  { id:"quill_2000",        name:"Grand Compendium",       desc:"2,000 quills — best value",                       price:"£12.99", emoji:"📚", stripePriceId:"" },
+  { id:"quill_100",         name:"Feather Pouch",         desc:"100 quills",                 price:"£0.99",  emoji:"🪶", stripePriceId:"" },
+  { id:"quill_500",         name:"Quill Bundle",           desc:"500 quills",                        price:"£3.99",  emoji:"📦", stripePriceId:"" },
+  { id:"quill_2000",        name:"Grand Compendium",       desc:"2,000 quills",                       price:"£12.99", emoji:"📚", stripePriceId:"" },
   { id:"ink_boost",         name:"Ink Surge",              desc:"Instantly fills all your ink wells to maximum",   price:"£0.99",  emoji:"💧", stripePriceId:"" },
   { id:"letter_pack",       name:"Letter Loot",            desc:"10 random rare special tiles added to inventory", price:"£1.99",  emoji:"🎲", stripePriceId:"" },
-  { id:"premium_cosmetics", name:"Illuminated Manuscript", desc:"Unlock Obsidian Codex cover (×1.30) and Gilded Folio pages (×1.15) — exclusive to supporters", price:"£2.99", emoji:"✨", stripePriceId:"" },
+  { id:"premium_cosmetics", name:"Illuminated Manuscript", desc:"Unlock Obsidian Codex cover (×1.30) and Gilded Folio pages (×1.15)", price:"£2.99", emoji:"✨", stripePriceId:"" },
 ];
