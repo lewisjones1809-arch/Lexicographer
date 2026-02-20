@@ -33,7 +33,7 @@ export const TUTORIAL_STEPS = [
   },
   {
     title: "Lexicoin Wildcard",
-    body: "Now spell MULCH. You don't have a U — but you have a Lexicoin (◈). Click it on the board, pick U, and it stands in for the missing letter. It scores 0 but lets you inscribe words you otherwise couldn't.",
+    body: "Now spell MULCH. You don't have a U — but you have a Lexicoin wildcard. Click it on the board, pick U, and it stands in for the missing letter. It scores 0 but lets you inscribe words you otherwise couldn't.",
     tabHint: null, showNext: false,
   },
   {

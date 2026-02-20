@@ -117,5 +117,5 @@ export const BASE_TILE_PROBS = [
   { type:"double_word",   chance:0.008, label:"Double Word (×2)" },
   { type:"triple_word",   chance:0.002, label:"Triple Word (×3)" },
   { type:"golden",        chance:0.0005, label:"Golden Tile (★)" },
-  { type:"lexicoin",      chance:0.003,  label:"Lexicoin Wildcard (◈)" },
+  { type:"lexicoin",      chance:0.003,  label:"Lexicoin Wildcard" },
 ];

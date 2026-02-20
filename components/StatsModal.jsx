@@ -1,4 +1,4 @@
-import { X, BarChart2, Droplet, Feather, BookOpen, Trophy, Star, CaseSensitive, Keyboard, BookMarked } from "lucide-react";
+import { X, BarChart2, Droplet, Feather, BookOpen, Trophy, Star, CaseSensitive, Keyboard, BookMarked, Aperture } from "lucide-react";
 import { P } from "../styles.js";
 import { fmt } from "../gameUtils.js";
 
@@ -62,7 +62,7 @@ export function StatsModal({ onClose, publishedLexicons, achievementProgress, ac
           {row(<Feather size={13}/>,       "Quills earned (all time)",         fmt(quillsEarned))}
           {row(<BookMarked size={13}/>,    "Golden notebooks earned (all time)", fmt(goldenNotebooksEarned))}
           {row(<Trophy size={13}/>,        "Achievements claimed",             achClaimed)}
-          {row(<Star size={13}/>,          "Best word score",                  bestWord ? `${bestWord.word} ◈ ${fmt(bestWord.score)}q` : "—")}
+          {row(<Star size={13}/>,          "Best word score",                  bestWord ? <span style={{ display:"flex", alignItems:"center", gap:4 }}>{bestWord.word} <Aperture size={11}/> {fmt(bestWord.score)}</span> : "—")}
           {row(<CaseSensitive size={13}/>, "Longest word",                     longestWord ?? "—")}
         </div>
       </div>
