@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c:*)",
+      "Bash(node --version:*)",
+      "Bash(npm --version:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vite build:*)",
+      "Bash(npm run build:*)",
+      "Bash(dir:*)",
+      "Bash(node -e:*)",
+      "Bash(node --input-type=module -e:*)",
+      "Bash(timeout 8 npx vite:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c \"taskkill /PID 33136 /F\")",
+      "Bash(cmd /c \"taskkill /PID 33136 /F 2>&1\")",
+      "Bash(echo:*)",
+      "Bash(cmd /c \"netstat -ano | findstr :3001 | findstr LISTENING\")",
+      "Bash(del \"c:\\\\Users\\\\lewis\\\\Desktop\\\\Coding\\\\Lexicographer\\\\server\\\\lexicographer.db\")",
+      "Bash(powershell -Command:*)",
+      "Bash(node --experimental-sqlite -e:*)"
+    ]
+  }
+}
