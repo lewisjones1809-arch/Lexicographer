@@ -3,7 +3,10 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const db = new DatabaseSync(join(__dirname, 'lexicographer.db'));
+const dbPath = process.env.RAILWAY_ENVIRONMENT
+  ? '/app/data/lexicographer.db'
+  : join(__dirname, 'lexicographer.db');
+const db = new DatabaseSync(dbPath);
 
 // Schema
 db.exec(`
