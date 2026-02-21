@@ -33,8 +33,8 @@ export function LexiconTab({
   }, []);
   const isWide = viewW >= 1400;
   const bookH = isWide
-    ? Math.max(300, Math.min(Math.floor(viewH * 0.6), 640))
-    : Math.max(240, Math.min(Math.floor(viewH * 0.45), 460));
+    ? Math.max(240, Math.min(Math.floor(viewH * 0.46), 480))
+    : Math.max(200, Math.min(Math.floor(viewH * 0.38), 360));
   const bookW = Math.round(bookH * 0.55);
   const monkeyScale = bookH / 360;
 

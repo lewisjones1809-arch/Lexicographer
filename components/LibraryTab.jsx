@@ -56,7 +56,7 @@ export function LibraryTab({ publishedLexicons, uiScale = 1 }) {
             const volNum = publishedLexicons.length - idx;
             return <MiniBookCover key={pub.id} cover={cover} entries={entries} quills={pub.quillsEarned}
               date={pub.date} volumeNumber={volNum}
-              onClick={() => { setOpenBook({ ...pub, index: volNum }); setBookPage(0); }} />;
+              onClick={() => setOpenBook({ ...pub, index: volNum })} />;
           })}
         </div>
       )}

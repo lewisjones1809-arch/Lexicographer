@@ -137,57 +137,6 @@ function IFCPage({ cover, scale, volumeNumber }) {
   );
 }
 
-function IBCPage({ cover, scale, entries, onPublish }) {
-  const s = n => Math.round(n * scale);
-  const canPublish = entries.length >= 10;
-  const totalScore = entries.reduce((sum, e) => sum + e.score, 0);
-  return (
-    <div style={{
-      position: "absolute", inset: 0,
-      background: cover.color,
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      gap: s(10),
-    }}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: s(4) }}>
-        <div style={{ fontSize: s(10), color: `${cover.accent}90`, fontFamily: "'Junicode',sans-serif" }}>
-          {entries.length} word{entries.length !== 1 ? "s" : ""}
-        </div>
-        {entries.length > 0 && (
-          <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: s(11), color: `${cover.accent}cc`, fontFamily: "'Junicode',sans-serif" }}>
-            <Aperture size={s(9)} />{fmt(totalScore)}
-          </div>
-        )}
-      </div>
-      <div style={{ width: s(36), height: 1, background: `${cover.accent}30` }}/>
-      {onPublish && (
-        <button
-          onClick={onPublish}
-          disabled={!canPublish}
-          style={{
-            background: "none",
-            border: `1px solid ${cover.accent}${canPublish ? "60" : "28"}`,
-            borderRadius: 4,
-            padding: `${s(5)}px ${s(14)}px`,
-            color: canPublish ? `${cover.accent}dd` : `${cover.accent}35`,
-            cursor: canPublish ? "pointer" : "default",
-            fontFamily: "'BLKCHCRY',serif",
-            fontSize: s(9),
-            display: "flex", alignItems: "center", gap: s(4),
-          }}
-        >
-          <Feather size={s(8)} />
-          {canPublish ? "Publish Lexicon" : `${entries.length}/10 words`}
-        </button>
-      )}
-      <div style={{
-        position: "absolute", bottom: s(12),
-        fontSize: s(6), color: `${cover.accent}40`,
-        fontFamily: "'Junicode',serif", letterSpacing: 1,
-      }}>✦ Lexicographer ✦</div>
-    </div>
-  );
-}
-
 function EmptyPage({ pageStyle, scale }) {
   const s = n => Math.round(n * scale);
   return (
@@ -304,14 +253,13 @@ export function BookView({
   const scale  = bw / 200;
   const s      = n => Math.round(n * scale);
 
-  // Slot model: IFC=0, wordPage0..N-1, IBC at an odd index (always right-hand page)
-  const N       = Math.ceil(sorted.length / WORDS_PER_PAGE);
-  const ibcSlot = (N + 1) % 2 === 1 ? N + 1 : N + 2; // always odd → right-hand page
-  const totalSpreads = (ibcSlot + 1) / 2;
-  const maxSpread    = Math.max(0, totalSpreads - 1);
+  // Slot model: IFC=0, wordPages 1..N (no back cover — right side always a page)
+  const N            = Math.ceil(sorted.length / WORDS_PER_PAGE);
+  const totalSpreads = Math.max(1, Math.ceil((N + 1) / 2));
+  const maxSpread    = totalSpreads - 1;
   const currentSpread = Math.min(spread, maxSpread);
 
-  const spineW   = s(20);
+  const spineW   = s(6);
   const foreEdge = s(16);
   const bands    = Math.min(Math.max(N * 2, 3), 18);
 
@@ -332,10 +280,8 @@ export function BookView({
 
   // ── Slot helpers ───────────────────────────────────
   const getSlotContent = (idx) => {
-    if (idx <= 0)         return { type: "ifc" };
-    if (idx === ibcSlot)  return { type: "ibc" };
-    if (idx > ibcSlot)    return { type: "empty" };
-    if (idx > N)          return { type: "blank" }; // blank verso before IBC
+    if (idx <= 0) return { type: "ifc" };
+    if (idx > N)  return { type: "empty" };
     const wpIdx = idx - 1;
     return {
       type: "words", slotNum: idx, wpIdx,
@@ -343,18 +289,13 @@ export function BookView({
     };
   };
 
-  const getPageBg = (idx) => {
-    const t = getSlotContent(idx).type;
-    return (t === "ifc" || t === "ibc") ? cover.color : pageStyle.bg;
-  };
+  const getPageBg = (idx) => idx <= 0 ? cover.color : pageStyle.bg;
 
   const renderSlot = (idx, { isFlipFace = false } = {}) => {
     const slot = getSlotContent(idx);
     if (slot.type === "ifc")
       return <IFCPage cover={cover} scale={scale} volumeNumber={volumeNumber} />;
-    if (slot.type === "ibc")
-      return <IBCPage cover={cover} scale={scale} entries={sorted} onPublish={onPublish} />;
-    if (slot.type === "blank" || slot.type === "empty")
+    if (slot.type === "empty")
       return <EmptyPage pageStyle={pageStyle} scale={scale} />;
     return (
       <WordPage
@@ -519,27 +460,22 @@ export function BookView({
             <div style={{
               ...leftPageStyle,
               background: getPageBg(leftSlotIdx),
-              boxShadow: "inset -8px 0 16px rgba(0,0,0,0.14), -2px 4px 24px rgba(0,0,0,0.22)",
+              boxShadow: "inset -6px 0 10px rgba(0,0,0,0.10), -2px 4px 20px rgba(0,0,0,0.2)",
             }}>
               {renderSlot(leftSlotIdx)}
             </div>
 
-            {/* Spine */}
+            {/* Spine — thin crease, shadows provide the gutter depth */}
             <div style={{
               position: "absolute", left: bw, top: 0, width: spineW, height: bh, zIndex: 2,
-              background: `linear-gradient(90deg, rgba(0,0,0,0.2) 0%, ${cover.accent}22 35%, ${cover.accent}14 65%, rgba(0,0,0,0.06) 100%)`,
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: s(8),
-            }}>
-              {[0,1,2].map(i => (
-                <div key={i} style={{ width: s(3), height: s(3), borderRadius: "50%", background: `${cover.accent}60` }}/>
-              ))}
-            </div>
+              background: `linear-gradient(90deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.06) 100%)`,
+            }}/>
 
             {/* Right page */}
             <div style={{
               ...rightPageStyle,
               background: getPageBg(rightSlotIdx),
-              boxShadow: "inset 8px 0 16px rgba(0,0,0,0.14), 2px 4px 24px rgba(0,0,0,0.22)",
+              boxShadow: "inset 6px 0 10px rgba(0,0,0,0.10), 2px 4px 20px rgba(0,0,0,0.2)",
             }}>
               {/* Fore-edge bands on right edge */}
               <div style={{
@@ -573,7 +509,7 @@ export function BookView({
                   background: flipInfo.dir === "opening" ? cover.color : getPageBg(flipInfo.fromSpread * 2 + 1),
                   borderRadius: `0 ${s(4)}px ${s(4)}px 0`,
                   overflow: "hidden",
-                  boxShadow: "inset 8px 0 16px rgba(0,0,0,0.12)",
+                  boxShadow: "inset 6px 0 10px rgba(0,0,0,0.10)",
                 }}>
                   {flipInfo.dir === "opening"
                     ? renderCoverFace()
@@ -588,7 +524,7 @@ export function BookView({
                   background: getPageBg(flipInfo.dir === "opening" ? 0 : (flipInfo.fromSpread + 1) * 2),
                   borderRadius: `${s(4)}px 0 0 ${s(4)}px`,
                   overflow: "hidden",
-                  boxShadow: "inset -8px 0 16px rgba(0,0,0,0.12)",
+                  boxShadow: "inset -6px 0 10px rgba(0,0,0,0.10)",
                 }}>
                   {flipInfo.dir === "opening"
                     ? renderSlot(0, { isFlipFace: true })
@@ -618,7 +554,7 @@ export function BookView({
                   background: getPageBg(flipInfo.fromSpread * 2),
                   borderRadius: `${s(4)}px 0 0 ${s(4)}px`,
                   overflow: "hidden",
-                  boxShadow: "inset -8px 0 16px rgba(0,0,0,0.12)",
+                  boxShadow: "inset -6px 0 10px rgba(0,0,0,0.10)",
                 }}>
                   {renderSlot(flipInfo.fromSpread * 2, { isFlipFace: true })}
                 </div>
@@ -630,7 +566,7 @@ export function BookView({
                   background: getPageBg((flipInfo.fromSpread - 1) * 2 + 1),
                   borderRadius: `0 ${s(4)}px ${s(4)}px 0`,
                   overflow: "hidden",
-                  boxShadow: "inset 8px 0 16px rgba(0,0,0,0.12)",
+                  boxShadow: "inset 6px 0 10px rgba(0,0,0,0.10)",
                 }}>
                   {renderSlot((flipInfo.fromSpread - 1) * 2 + 1, { isFlipFace: true })}
                 </div>
@@ -668,6 +604,28 @@ export function BookView({
           >▶</button>
         </div>
       )}
+
+      {bookOpen && onPublish && (() => {
+        const canPublish = sorted.length >= 10;
+        return (
+          <button
+            onClick={onPublish}
+            disabled={!canPublish}
+            style={{
+              marginTop: 8, background: "none",
+              border: `1px solid ${P.border}`,
+              color: canPublish ? P.textSecondary : P.textMuted,
+              padding: "5px 16px", borderRadius: 4,
+              cursor: canPublish ? "pointer" : "default",
+              fontFamily: "'BLKCHCRY',serif", fontSize: 11, letterSpacing: 1,
+              display: "flex", alignItems: "center", gap: 6,
+            }}
+          >
+            <Feather size={10} />
+            {canPublish ? "Publish" : `${sorted.length} / 10 words`}
+          </button>
+        );
+      })()}
 
       {onClose && (
         <button
