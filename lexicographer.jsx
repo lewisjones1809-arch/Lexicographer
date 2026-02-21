@@ -1040,8 +1040,8 @@ export default function Lexicographer() {
           <AchievementsTrigger onClick={() => setShowAchievements(true)} claimableCount={claimableCount} iconSize={Math.round(24 * headerScale)} />
           <MissionsTrigger onClick={() => setShowMissions(true)} unclaimedCount={missions.filter(m => m.progress >= m.target && !m.claimed).length} iconSize={Math.round(24 * headerScale)} />
           <div data-settings-panel style={{ position:"relative" }}>
-            <div onClick={() => setShowSettings(s => !s)} style={{ display:"flex", alignItems:"center", cursor:"pointer", color:P.textSecondary, opacity:showSettings?1:0.65, transition:"opacity 0.2s" }} title="Settings">
-              <Settings size={Math.round(22 * headerScale)} strokeWidth={1.5}/>
+            <div onClick={() => setShowSettings(s => !s)} style={{ display:"flex", alignItems:"center", cursor:"pointer", color:showSettings?P.textPrimary:P.textSecondary, transition:"color 0.2s" }} title="Settings">
+              <Settings size={Math.round(22 * headerScale)} />
             </div>
             {showSettings && (
               <div data-settings-panel style={{ position:"absolute", right:0, top:"calc(100% + 8px)", minWidth:130, background:"#fff", border:`1px solid ${P.border}`, borderRadius:6, overflow:"hidden", zIndex:200, boxShadow:"0 4px 16px rgba(0,0,0,0.18)" }}>
