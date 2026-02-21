@@ -23,7 +23,7 @@ export function LibraryTab({ publishedLexicons, uiScale = 1 }) {
     const page = PAGE_STYLES.find(p => p.id === pub.pageId) || PAGE_STYLES[0];
     const entries = (pub.entries || pub.words?.map(w => ({ word: w, score: scoreWord(w) })) || []);
     return (
-      <div style={{ paddingTop:8 }}>
+      <div className="lex-tab-panel" style={{ paddingTop:8 }}>
         <div style={{ textAlign:"center", marginBottom:16 }}>
           <div style={st.heading}>Volume {toRoman(pub.index)}</div>
           <div style={{ ...st.sub, display:"flex", alignItems:"center", justifyContent:"center", gap:4 }}>
@@ -38,7 +38,7 @@ export function LibraryTab({ publishedLexicons, uiScale = 1 }) {
   }
 
   return (
-    <div style={{ paddingTop:8 }}>
+    <div className="lex-tab-panel" style={{ paddingTop:8 }}>
       <div style={{ marginBottom:20 }}>
         <div style={st.heading}>My Library</div>
         <div style={st.sub}>{publishedLexicons.length} lexicon{publishedLexicons.length!==1?"s":""} published</div>

@@ -53,7 +53,7 @@ export function ShopTab({ quills, goldenNotebooks, ownedCovers, ownedPages, acti
   ];
 
   return (
-    <div>
+    <div className="lex-tab-panel">
       <div style={{ marginBottom:4 }}>
         <div style={st.heading}>Shop</div>
       </div>

@@ -35,7 +35,7 @@ button, [role="button"] { touch-action: manipulation; }
 /* Wide (≥1400px): side-by-side, both columns fill height and scroll independently */
 @media (min-width: 1400px) {
   .lex-tab-content { overflow: hidden; display: flex; flex-direction: column; }
-  .lex-tab-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .lex-tab-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; }
   .lex-lexicon-outer { flex-direction: row; align-items: stretch; flex: 1; min-height: 0; }
   .lex-book-col { flex: 1; padding-right: 20px; border-right: 1px solid #e0d8cc; overflow-y: auto; }
   .lex-form-col { flex: 1; padding-left: 20px; overflow-y: auto; }
