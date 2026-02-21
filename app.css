@@ -44,8 +44,8 @@ button, [role="button"] { touch-action: manipulation; }
 /* Header area — always exactly 15% of viewport height */
 .lex-header { height: 15vh; flex-shrink: 0; overflow: hidden; display: flex; flex-direction: column; }
 
-/* Title scales with viewport width */
-.lex-title { font-size: clamp(16px, 1.8vw, 40px); }
+/* Title scales with viewport height (header is 15vh) */
+.lex-title { font-size: clamp(14px, 3vh, 44px); }
 
 /* === RESPONSIVE TWEAKS === */
 @media (max-width: 480px) {

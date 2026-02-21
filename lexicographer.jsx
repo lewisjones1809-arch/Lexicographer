@@ -41,12 +41,15 @@ export default function Lexicographer() {
   const isTutorial = localStorage.getItem('lexTutorialDone') !== 'true';
 
   const [viewW, setViewW] = useState(window.innerWidth);
+  const [viewH, setViewH] = useState(window.innerHeight);
   useEffect(() => {
-    const onResize = () => setViewW(window.innerWidth);
+    const onResize = () => { setViewW(window.innerWidth); setViewH(window.innerHeight); };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
   const uiScale = Math.max(1, Math.min(viewW / 1200, 1.8));
+  // Header scales with viewport height (header is always 15vh)
+  const headerScale = Math.max(0.7, Math.min(viewH / 900, 1.5));
 
   const [wellFloats, setWellFloats] = useState({});
   const [collectedInk, setCollectedInk] = useState(isTutorial ? 15 : 0);
@@ -1021,24 +1024,24 @@ export default function Lexicographer() {
         {/* 2×2 currency grid — left */}
         <div style={{ display:"grid", gridTemplateColumns:"auto auto", gap:"3px 20px" }}>
           {[
-            { key:"ink",     icon:<Droplet    size={Math.round(12 * uiScale)} strokeWidth={1.5}/>, v:fmt(collectedInk),   c:P.ink },
-            { key:"quills",  icon:<Feather    size={Math.round(12 * uiScale)} strokeWidth={1.5}/>, v:fmt(quills),          c:P.quill },
-            { key:"letters", icon:<CaseUpper  size={Math.round(12 * uiScale)} strokeWidth={1.5}/>, v:fmt(totalLetters),   c:P.textSecondary },
-            { key:"nb",      icon:<BookMarked size={Math.round(12 * uiScale)} strokeWidth={1.5}/>, v:fmt(goldenNotebooks), c:P.quill },
+            { key:"ink",     icon:<Droplet    size={Math.round(16 * headerScale)} strokeWidth={1.5}/>, v:fmt(collectedInk),   c:P.ink },
+            { key:"quills",  icon:<Feather    size={Math.round(16 * headerScale)} strokeWidth={1.5}/>, v:fmt(quills),          c:P.quill },
+            { key:"letters", icon:<CaseUpper  size={Math.round(16 * headerScale)} strokeWidth={1.5}/>, v:fmt(totalLetters),   c:P.textSecondary },
+            { key:"nb",      icon:<BookMarked size={Math.round(16 * headerScale)} strokeWidth={1.5}/>, v:fmt(goldenNotebooks), c:P.quill },
           ].map(s=>(
             <div key={s.key} style={{ display:"flex", alignItems:"center", gap:6 }}>
               <div style={{ color:s.c, opacity:0.7, display:"flex", alignItems:"center" }}>{s.icon}</div>
-              <div style={{ fontSize:Math.round(14 * uiScale), fontWeight:700, color:s.c, fontFamily:"'Junicode',sans-serif", lineHeight:1.2 }}>{s.v}</div>
+              <div style={{ fontSize:Math.round(16 * headerScale), fontWeight:700, color:s.c, fontFamily:"'Junicode',sans-serif", lineHeight:1.2 }}>{s.v}</div>
             </div>
           ))}
         </div>
         {/* Action buttons — right */}
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <AchievementsTrigger onClick={() => setShowAchievements(true)} claimableCount={claimableCount} iconSize={Math.round(20 * uiScale)} />
-          <MissionsTrigger onClick={() => setShowMissions(true)} unclaimedCount={missions.filter(m => m.progress >= m.target && !m.claimed).length} iconSize={Math.round(20 * uiScale)} />
+          <AchievementsTrigger onClick={() => setShowAchievements(true)} claimableCount={claimableCount} iconSize={Math.round(24 * headerScale)} />
+          <MissionsTrigger onClick={() => setShowMissions(true)} unclaimedCount={missions.filter(m => m.progress >= m.target && !m.claimed).length} iconSize={Math.round(24 * headerScale)} />
           <div data-settings-panel style={{ position:"relative" }}>
             <div onClick={() => setShowSettings(s => !s)} style={{ display:"flex", alignItems:"center", cursor:"pointer", color:P.textSecondary, opacity:showSettings?1:0.65, transition:"opacity 0.2s" }} title="Settings">
-              <Settings size={Math.round(18 * uiScale)} strokeWidth={1.5}/>
+              <Settings size={Math.round(22 * headerScale)} strokeWidth={1.5}/>
             </div>
             {showSettings && (
               <div data-settings-panel style={{ position:"absolute", right:0, top:"calc(100% + 8px)", minWidth:130, background:"#fff", border:`1px solid ${P.border}`, borderRadius:6, overflow:"hidden", zIndex:200, boxShadow:"0 4px 16px rgba(0,0,0,0.18)" }}>
@@ -1073,7 +1076,7 @@ export default function Lexicographer() {
                 borderBottom: activeTab===tab.id ? `2px solid ${P.ink}` : "2px solid transparent",
                 color: activeTab===tab.id ? P.textPrimary : isHinted ? P.ink : P.textMuted,
                 cursor:"pointer",
-                fontFamily:"'BLKCHCRY',serif", fontSize:Math.round(12 * uiScale),
+                fontFamily:"'BLKCHCRY',serif", fontSize:Math.round(14 * headerScale),
                 fontWeight: activeTab===tab.id ? 700 : isHinted ? 700 : 400,
                 transition:"all 0.2s",
               }}>{tab.label}</motion.button>
