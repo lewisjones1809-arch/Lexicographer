@@ -22,7 +22,6 @@ export function LexiconTab({
   activeCover, activePageStyle, maxLetters,
   monkeyCount, monkeyTimers, monkeyAnims, clearMonkeyAnim, volumeNumber,
 }) {
-  const [bookPage, setBookPage] = useState(0);
   const [lexiconPickerOpen, setLexiconPickerOpen] = useState(false);
   const [pendingLexiconTileId, setPendingLexiconTileId] = useState(null);
   const [viewH, setViewH] = useState(window.innerHeight);
@@ -36,7 +35,7 @@ export function LexiconTab({
   const bookH = isWide
     ? Math.max(300, Math.min(Math.floor(viewH * 0.6), 640))
     : Math.max(240, Math.min(Math.floor(viewH * 0.45), 460));
-  const bookW = Math.round(bookH * (280 / 360));
+  const bookW = Math.round(bookH * 0.55);
   const monkeyScale = bookH / 360;
 
   // Auto-remove monkey animations after their duration
@@ -132,7 +131,7 @@ export function LexiconTab({
           {monkeyCount > 0 && monkeyColumn([0,1,2,3,4])}
           {/* Book */}
           <div style={{ flexShrink:0 }}>
-            <BookView entries={lexicon} cover={activeCover} pageStyle={activePageStyle} currentPage={bookPage} setCurrentPage={setBookPage} bw={bookW} bh={bookH} volumeNumber={volumeNumber} onPublish={publishLexicon} />
+            <BookView entries={lexicon} cover={activeCover} pageStyle={activePageStyle} bw={bookW} bh={bookH} volumeNumber={volumeNumber} onPublish={publishLexicon} />
           </div>
           {/* Right inner column: slots 10-14 */}
           {monkeyCount > 10 && monkeyColumn([10,11,12,13,14])}

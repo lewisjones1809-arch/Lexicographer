@@ -16,7 +16,6 @@ function toRoman(n) {
 export function LibraryTab({ publishedLexicons, uiScale = 1 }) {
   const sc = n => Math.round(n * uiScale);
   const [openBook, setOpenBook] = useState(null);
-  const [bookPage, setBookPage] = useState(0);
 
   if (openBook) {
     const pub = openBook;
@@ -32,8 +31,8 @@ export function LibraryTab({ publishedLexicons, uiScale = 1 }) {
             <Feather size={10}/><span>{fmt(pub.quillsEarned)} quills</span>
           </div>
         </div>
-        <BookView entries={entries} cover={cover} pageStyle={page} currentPage={bookPage} setCurrentPage={setBookPage}
-          onClose={() => { setOpenBook(null); setBookPage(0); }} volumeNumber={pub.index} />
+        <BookView entries={entries} cover={cover} pageStyle={page} startOpen={true}
+          onClose={() => setOpenBook(null)} volumeNumber={pub.index} />
       </div>
     );
   }

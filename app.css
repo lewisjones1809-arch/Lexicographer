@@ -47,6 +47,18 @@ button, [role="button"] { touch-action: manipulation; }
 /* Title scales with viewport height (header is 15vh) */
 .lex-title { font-size: clamp(14px, 3vh, 44px); }
 
+/* === BOOK PAGE-FLIP ANIMATIONS === */
+@keyframes lex-flip-fwd {
+  from { transform: rotateY(0deg);    }
+  to   { transform: rotateY(-180deg); }
+}
+@keyframes lex-flip-bwd {
+  from { transform: rotateY(0deg);   }
+  to   { transform: rotateY(180deg); }
+}
+.lex-flip-fwd { animation: lex-flip-fwd 0.45s ease-in-out forwards; }
+.lex-flip-bwd { animation: lex-flip-bwd 0.45s ease-in-out forwards; }
+
 /* === RESPONSIVE TWEAKS === */
 @media (max-width: 480px) {
   .lex-tab-btn { font-size: 10px !important; padding: 10px 2px !important; }
