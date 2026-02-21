@@ -41,8 +41,11 @@ button, [role="button"] { touch-action: manipulation; }
   .lex-form-col { flex: 1; padding-left: 20px; overflow-y: auto; }
 }
 
+/* Header area — always exactly 15% of viewport height */
+.lex-header { height: 15vh; flex-shrink: 0; overflow: hidden; display: flex; flex-direction: column; }
+
 /* Title scales with viewport width */
-.lex-title { font-size: clamp(20px, 2vw, 44px); }
+.lex-title { font-size: clamp(16px, 1.8vw, 40px); }
 
 /* === RESPONSIVE TWEAKS === */
 @media (max-width: 480px) {

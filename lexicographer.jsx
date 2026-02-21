@@ -1011,12 +1011,13 @@ export default function Lexicographer() {
   return (
     <div className="lex-app-inner" style={{ color:P.textPrimary, fontFamily:"'Junicode', sans-serif" }}>
 
-      <div style={{ textAlign:"center", padding:"16px 16px 0", position:"relative", zIndex:1 }}>
+      <div className="lex-header">
+      <div style={{ textAlign:"center", flex:1, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", padding:"0 16px", position:"relative", zIndex:1 }}>
         <h1 className="lex-title" style={{ fontFamily:"'BLKCHCRY',serif", fontWeight:700, letterSpacing:1, margin:0, color:P.textPrimary }}>Lexicographer</h1>
-        <div style={{ width:80, height:1, margin:"6px auto", background:P.border }}/>
+        <div style={{ width:80, height:1, margin:"3px auto 0", background:P.border }}/>
       </div>
 
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 16px", borderBottom:`1px solid ${P.border}`, margin:"0 16px" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"4px 16px", borderBottom:`1px solid ${P.border}`, margin:"0 16px" }}>
         {/* 2×2 currency grid — left */}
         <div style={{ display:"grid", gridTemplateColumns:"auto auto", gap:"3px 20px" }}>
           {[
@@ -1068,7 +1069,7 @@ export default function Lexicographer() {
               animate={isHinted ? { opacity: [1, 0.35, 1] } : { opacity: 1 }}
               transition={isHinted ? { duration: 1.4, repeat: Infinity, ease: "easeInOut" } : {}}
               style={{
-                flex:1, padding:"12px 4px", background:"none", border:"none",
+                flex:1, padding:"8px 4px", background:"none", border:"none",
                 borderBottom: activeTab===tab.id ? `2px solid ${P.ink}` : "2px solid transparent",
                 color: activeTab===tab.id ? P.textPrimary : isHinted ? P.ink : P.textMuted,
                 cursor:"pointer",
@@ -1079,6 +1080,7 @@ export default function Lexicographer() {
           );
         })}
       </div>
+    </div>{/* end .lex-header */}
 
       <div className="lex-tab-content" style={{ flex:1, padding:16, position:"relative", zIndex:1 }}>
         {showDebug && <DebugPanel
