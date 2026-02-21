@@ -41,8 +41,8 @@ button, [role="button"] { touch-action: manipulation; }
   .lex-form-col { flex: 1; padding-left: 20px; overflow-y: auto; }
 }
 
-/* Header area — always exactly 15% of viewport height */
-.lex-header { height: 15vh; flex-shrink: 0; overflow: hidden; display: flex; flex-direction: column; }
+/* Header area — always exactly 15% of viewport height; z-index keeps dropdowns above tab content */
+.lex-header { height: 15vh; flex-shrink: 0; overflow: visible; display: flex; flex-direction: column; position: relative; z-index: 10; }
 
 /* Title scales with viewport height (header is 15vh) */
 .lex-title { font-size: clamp(14px, 3vh, 44px); }
