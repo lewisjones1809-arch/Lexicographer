@@ -12,7 +12,7 @@ function getMidnightCountdown() {
   return `${h}h ${m}m`;
 }
 
-export function MissionsTrigger({ onClick, unclaimedCount }) {
+export function MissionsTrigger({ onClick, unclaimedCount, iconSize = 20 }) {
   return (
     <button
       onClick={onClick}
@@ -28,7 +28,7 @@ export function MissionsTrigger({ onClick, unclaimedCount }) {
       }}
       title="Daily Missions"
     >
-      <Calendar size={20} />
+      <Calendar size={iconSize} />
       {unclaimedCount > 0 && (
         <span style={{
           position: "absolute",

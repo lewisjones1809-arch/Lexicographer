@@ -3,7 +3,7 @@ import { Trophy, X } from "lucide-react";
 import { P, st } from "../styles.js";
 import { fmt } from "../gameUtils.js";
 
-export function AchievementsTrigger({ onClick, claimableCount }) {
+export function AchievementsTrigger({ onClick, claimableCount, iconSize = 20 }) {
   return (
     <button
       onClick={onClick}
@@ -19,7 +19,7 @@ export function AchievementsTrigger({ onClick, claimableCount }) {
       }}
       title="Achievements"
     >
-      <Trophy size={20} />
+      <Trophy size={iconSize} />
       {claimableCount > 0 && (
         <span style={{
           position: "absolute",
