@@ -26,12 +26,16 @@ export function LexiconTab({
   const [lexiconPickerOpen, setLexiconPickerOpen] = useState(false);
   const [pendingLexiconTileId, setPendingLexiconTileId] = useState(null);
   const [viewH, setViewH] = useState(window.innerHeight);
+  const [viewW, setViewW] = useState(window.innerWidth);
   useEffect(() => {
-    const onResize = () => setViewH(window.innerHeight);
+    const onResize = () => { setViewH(window.innerHeight); setViewW(window.innerWidth); };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
-  const bookH = Math.max(300, Math.min(Math.floor(viewH * 0.6), 640));
+  const isWide = viewW >= 1400;
+  const bookH = isWide
+    ? Math.max(300, Math.min(Math.floor(viewH * 0.6), 640))
+    : Math.max(240, Math.min(Math.floor(viewH * 0.45), 460));
   const bookW = Math.round(bookH * (280 / 360));
   const monkeyScale = bookH / 360;
 

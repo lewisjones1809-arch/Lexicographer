@@ -13,7 +13,8 @@ function toRoman(n) {
   return r;
 }
 
-export function LibraryTab({ publishedLexicons }) {
+export function LibraryTab({ publishedLexicons, uiScale = 1 }) {
+  const sc = n => Math.round(n * uiScale);
   const [openBook, setOpenBook] = useState(null);
   const [bookPage, setBookPage] = useState(0);
 
@@ -49,7 +50,7 @@ export function LibraryTab({ publishedLexicons }) {
           <div style={{ fontSize:14, color:P.textMuted, fontStyle:"italic" }}>No published lexicons yet.</div>
         </div>
       ) : (
-        <div style={{ display:"flex", flexWrap:"wrap", gap:16, justifyContent:"center" }}>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:sc(16), justifyContent:"center" }}>
           {publishedLexicons.map((pub, idx) => {
             const cover = COVERS.find(c => c.id === pub.coverId) || COVERS[0];
             const entries = (pub.entries || pub.words?.map(w => ({ word: w, score: scoreWord(w) })) || []);

@@ -18,8 +18,9 @@ export function LetterPressTab({
   startPress, buyPress, buyPressManager,
   totalLetters, letters, specialTiles, collectedInk,
   pressUpgradeLevels, buyDeviceUpgrade,
-  recentTiles, pressEjects, clearPressEject, unlockedQtys, maxLetters
+  recentTiles, pressEjects, clearPressEject, unlockedQtys, maxLetters, uiScale = 1
 }) {
+  const sc = n => Math.round(n * uiScale);
   const [qty, setQty] = useState(1);
   const [showInfo, setShowInfo] = useState(false);
   const [selectedPress, setSelectedPress] = useState(0);
@@ -50,7 +51,7 @@ export function LetterPressTab({
 
       {/* Header */}
       <div style={{ textAlign:"center", marginBottom:16 }}>
-        <div style={{ ...st.heading, fontSize:22, marginBottom:0 }}>Letter Pressing</div>
+        <div style={{ ...st.heading, fontSize:sc(22), marginBottom:0 }}>Letter Pressing</div>
       </div>
 
       <div className="lex-lexicon-outer">
@@ -101,17 +102,17 @@ export function LetterPressTab({
                   }
                   transition={canAffordPress ? { duration:2, repeat:Infinity, ease:"easeInOut" } : { duration:0.2 }}
                   style={{
-                    width:100, height:100, flexShrink:0, cursor: canAffordPress ? "pointer" : "default",
+                    width:sc(100), height:sc(100), flexShrink:0, cursor: canAffordPress ? "pointer" : "default",
                     opacity: canAffordPress ? 1 : 0.55,
-                    display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6,
-                    borderRadius:8,
+                    display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:sc(6),
+                    borderRadius:sc(8),
                     border: canAffordPress ? `1.5px solid ${P.ink}` : `1.5px dashed ${P.border}`,
                     background: canAffordPress ? P.panelBg : P.surfaceBg,
                     transition:"border 0.2s, background 0.2s, opacity 0.2s",
                   }}>
-                  <div style={{ fontSize:9, fontFamily:"'BLKCHCRY',serif", color:P.textSecondary, textAlign:"center", lineHeight:1.3, padding:"0 4px" }}>Buy New Press</div>
-                  <div style={{ display:"flex", alignItems:"center", gap:3, fontSize:10, color:P.ink, fontFamily:"'Junicode',sans-serif", fontWeight:700 }}>
-                    <Droplet size={9} strokeWidth={1.5}/>{fmt(nextPressCost)}
+                  <div style={{ fontSize:sc(9), fontFamily:"'BLKCHCRY',serif", color:P.textSecondary, textAlign:"center", lineHeight:1.3, padding:"0 4px" }}>Buy New Press</div>
+                  <div style={{ display:"flex", alignItems:"center", gap:3, fontSize:sc(10), color:P.ink, fontFamily:"'Junicode',sans-serif", fontWeight:700 }}>
+                    <Droplet size={sc(9)} strokeWidth={1.5}/>{fmt(nextPressCost)}
                   </div>
                 </motion.div>
               ) : (
@@ -119,7 +120,7 @@ export function LetterPressTab({
                   pUpg={pressUpgradeLevels[idx] || mkPressUpg()} hasManager={!!pressMgrOwned[idx]}
                   onStart={startPress}
                   eject={pressEjects[idx] || null}
-                  onEjectEnd={clearPressEject} />
+                  onEjectEnd={clearPressEject} scale={uiScale} />
               );
 
               const showHireMgr = !isBuySlot && !pressMgrOwned[idx];
@@ -127,24 +128,24 @@ export function LetterPressTab({
               const showMgrName = !isBuySlot && !!pressMgrOwned[idx];
 
               return (
-                <div key={idx} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:6, flexShrink:0 }}>
+                <div key={idx} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:sc(6), flexShrink:0 }}>
                   {card}
                   {showHireMgr && (
                     <button onClick={canAffordMgr ? () => buyPressManager(idx) : undefined} style={{
-                      width:100, padding:"3px 0", borderRadius:6, border:"none",
+                      width:sc(100), padding:"3px 0", borderRadius:6, border:"none",
                       background: canAffordMgr ? P.btnActiveBg : P.btnInactiveBg,
                       color: canAffordMgr ? P.btnActiveText : P.btnInactiveText,
                       cursor: canAffordMgr ? "pointer" : "default",
-                      fontSize:9, fontFamily:"'Junicode',sans-serif", textAlign:"center", lineHeight:1.5,
+                      fontSize:sc(9), fontFamily:"'Junicode',sans-serif", textAlign:"center", lineHeight:1.5,
                     }}>
                       <div>Hire: {PRESS_MANAGERS[idx].name}</div>
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:3 }}>
-                        <UserStar size={8} strokeWidth={1.5}/>{fmt(PRESS_MGR_COSTS[idx])}
+                        <UserStar size={sc(8)} strokeWidth={1.5}/>{fmt(PRESS_MGR_COSTS[idx])}
                       </div>
                     </button>
                   )}
                   {showMgrName && (
-                    <div style={{ fontSize:9, color:P.sage, fontFamily:"'Junicode',sans-serif", textAlign:"center" }}>
+                    <div style={{ fontSize:sc(9), color:P.sage, fontFamily:"'Junicode',sans-serif", textAlign:"center" }}>
                       ✓ {PRESS_MANAGERS[idx].name}
                     </div>
                   )}
@@ -153,9 +154,9 @@ export function LetterPressTab({
             });
             const row2 = slots.slice(3);
             return (
-              <div style={{ margin:`0 auto ${mb}px`, width:332 }}>
-                <div style={{ display:"flex", justifyContent:"center", gap:16, marginBottom: row2.length > 0 ? 16 : 0 }}>{slots.slice(0, 3)}</div>
-                {row2.length > 0 && <div style={{ display:"flex", justifyContent:"center", gap:16 }}>{row2}</div>}
+              <div style={{ margin:`0 auto ${mb}px`, width:sc(332) }}>
+                <div style={{ display:"flex", justifyContent:"center", gap:sc(16), marginBottom: row2.length > 0 ? sc(16) : 0 }}>{slots.slice(0, 3)}</div>
+                {row2.length > 0 && <div style={{ display:"flex", justifyContent:"center", gap:sc(16) }}>{row2}</div>}
               </div>
             );
           })()}
@@ -241,7 +242,7 @@ export function LetterPressTab({
                 deviceLabel={`Press ${selectedPress + 1}`}
                 upgrades={PRESS_UPGRADE_NAMES.map(n => UPGRADES_BY_NAME[n])}
                 upgradeLevels={pressUpgradeLevels[selectedPress] || mkPressUpg()}
-                qty={qty} collectedInk={collectedInk}
+                qty={qty} collectedInk={collectedInk} scale={uiScale}
                 onBuy={(upgrade, count, cost) => buyDeviceUpgrade("press", selectedPress, upgrade, count, cost)} />
             </div>
           )}

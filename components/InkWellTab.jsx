@@ -13,8 +13,9 @@ export function InkWellTab({
   wells, wellCount, wellMgrOwned, wellMgrEnabled,
   collectedInk, collectWell, buyWell, buyWellManager, toggleWellManager,
   wellUpgradeLevels, mgrUpgradeLevels, buyDeviceUpgrade,
-  wellRefs, wellFloats, tutorialStep, unlockedQtys, inkMult
+  wellRefs, wellFloats, tutorialStep, unlockedQtys, inkMult, uiScale = 1
 }) {
+  const sc = n => Math.round(n * uiScale);
   const [qty, setQty] = useState(1);
   const [showInfo, setShowInfo] = useState(false);
   const [selectedWell, setSelectedWell] = useState(0);
@@ -38,7 +39,7 @@ export function InkWellTab({
 
       {/* Header */}
       <div style={{ textAlign:"center", marginBottom:16 }}>
-        <div style={{ ...st.heading, fontSize:22, marginBottom:0 }}>Ink Wells</div>
+        <div style={{ ...st.heading, fontSize:sc(22), marginBottom:0 }}>Ink Wells</div>
       </div>
 
       <div className="lex-lexicon-outer">
@@ -87,11 +88,11 @@ export function InkWellTab({
 
               const card = isBuySlot ? (
                 <div onClick={canAffordWell ? buyWell : undefined} style={{
-                  width:100, flexShrink:0, cursor: canAffordWell ? "pointer" : "default",
+                  width:sc(100), flexShrink:0, cursor: canAffordWell ? "pointer" : "default",
                   opacity: canAffordWell ? 1 : 0.55,
-                  display:"flex", flexDirection:"column", alignItems:"center", gap:6,
+                  display:"flex", flexDirection:"column", alignItems:"center", gap:sc(6),
                 }}>
-                  <div style={{ fontSize:10, fontFamily:"'Junicode',sans-serif", letterSpacing:1, color:P.textMuted, fontWeight:700 }}>
+                  <div style={{ fontSize:sc(10), fontFamily:"'Junicode',sans-serif", letterSpacing:1, color:P.textMuted, fontWeight:700 }}>
                     Well {idx + 1}
                   </div>
                   <motion.div
@@ -101,20 +102,20 @@ export function InkWellTab({
                     }
                     transition={canAffordWell ? { duration:2, repeat:Infinity, ease:"easeInOut" } : { duration:0.2 }}
                     style={{
-                      width:64, height:84, borderRadius:"8px 8px 26px 26px",
+                      width:sc(64), height:sc(84), borderRadius:`${sc(8)}px ${sc(8)}px ${sc(26)}px ${sc(26)}px`,
                       border: canAffordWell ? `1.5px solid ${P.ink}` : `1.5px dashed ${P.border}`,
                       background: canAffordWell ? P.panelBg : P.surfaceBg,
-                      display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6,
+                      display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:sc(6),
                       transition:"border 0.2s, background 0.2s",
                     }}>
-                    <div style={{ fontSize:9, fontFamily:"'BLKCHCRY',serif", color:P.textSecondary, textAlign:"center", lineHeight:1.3, padding:"0 4px" }}>
+                    <div style={{ fontSize:sc(9), fontFamily:"'BLKCHCRY',serif", color:P.textSecondary, textAlign:"center", lineHeight:1.3, padding:"0 4px" }}>
                       {tutorialStep === 2 && wellCount === 0 ? "FREE" : "Buy New Well"}
                     </div>
-                    <div style={{ display:"flex", alignItems:"center", gap:3, fontSize:10, color:P.ink, fontFamily:"'Junicode',sans-serif", fontWeight:700 }}>
-                      <Droplet size={9} strokeWidth={1.5}/>{tutorialStep === 2 && wellCount === 0 ? "free" : fmt(nextWellCost)}
+                    <div style={{ display:"flex", alignItems:"center", gap:3, fontSize:sc(10), color:P.ink, fontFamily:"'Junicode',sans-serif", fontWeight:700 }}>
+                      <Droplet size={sc(9)} strokeWidth={1.5}/>{tutorialStep === 2 && wellCount === 0 ? "free" : fmt(nextWellCost)}
                     </div>
                   </motion.div>
-                  <div style={{ height:15 }}/>{/* spacer matching fill-rate line */}
+                  <div style={{ height:sc(15) }}/>{/* spacer matching fill-rate line */}
                 </div>
               ) : (
                 <WellMiniCard well={wells[idx]} idx={idx}
@@ -123,7 +124,7 @@ export function InkWellTab({
                   isEnabled={!!wellMgrOwned[idx] ? (wellMgrEnabled[idx] ?? true) : false}
                   onCollect={collectWell} onToggleManager={toggleWellManager}
                   wellRef={el => { wellRefs.current[idx] = el; }} inkMult={inkMult}
-                  floatData={wellFloats?.[idx]} />
+                  floatData={wellFloats?.[idx]} scale={uiScale} />
               );
 
               const showBuyMgr = !isBuySlot && !wellMgrOwned[idx] && idx < wellCount;
@@ -131,24 +132,24 @@ export function InkWellTab({
               const showMgrName = !isBuySlot && !!wellMgrOwned[idx];
 
               return (
-                <div key={idx} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:6, flexShrink:0 }}>
+                <div key={idx} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:sc(6), flexShrink:0 }}>
                   {card}
                   {showBuyMgr && (
                     <button onClick={canAffordMgr ? () => buyWellManager(idx) : undefined} style={{
-                      width:100, padding:"3px 0", borderRadius:6, border:"none",
+                      width:sc(100), padding:"3px 0", borderRadius:6, border:"none",
                       background: canAffordMgr ? P.btnActiveBg : P.btnInactiveBg,
                       color: canAffordMgr ? P.btnActiveText : P.btnInactiveText,
                       cursor: canAffordMgr ? "pointer" : "default",
-                      fontSize:9, fontFamily:"'Junicode',sans-serif", textAlign:"center", lineHeight:1.5,
+                      fontSize:sc(9), fontFamily:"'Junicode',sans-serif", textAlign:"center", lineHeight:1.5,
                     }}>
                       <div>Hire: {WELL_MANAGERS[idx].name}</div>
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:3 }}>
-                        <Droplet size={8} strokeWidth={1.5}/>{fmt(WELL_MGR_COSTS[idx])}
+                        <Droplet size={sc(8)} strokeWidth={1.5}/>{fmt(WELL_MGR_COSTS[idx])}
                       </div>
                     </button>
                   )}
                   {showMgrName && (
-                    <div style={{ fontSize:9, color:P.sage, fontFamily:"'Junicode',sans-serif", textAlign:"center" }}>
+                    <div style={{ fontSize:sc(9), color:P.sage, fontFamily:"'Junicode',sans-serif", textAlign:"center" }}>
                       ✓ {WELL_MANAGERS[idx].name}
                     </div>
                   )}
@@ -158,9 +159,9 @@ export function InkWellTab({
 
             const row2 = slots.slice(3);
             return (
-              <div style={{ margin:"0 auto 16px", width:332 }}>
-                <div style={{ display:"flex", justifyContent:"center", gap:16, marginBottom: row2.length > 0 ? 16 : 0 }}>{slots.slice(0, 3)}</div>
-                {row2.length > 0 && <div style={{ display:"flex", justifyContent:"center", gap:16 }}>{row2}</div>}
+              <div style={{ margin:`0 auto ${sc(16)}px`, width:sc(332) }}>
+                <div style={{ display:"flex", justifyContent:"center", gap:sc(16), marginBottom: row2.length > 0 ? sc(16) : 0 }}>{slots.slice(0, 3)}</div>
+                {row2.length > 0 && <div style={{ display:"flex", justifyContent:"center", gap:sc(16) }}>{row2}</div>}
               </div>
             );
           })()}
@@ -193,7 +194,7 @@ export function InkWellTab({
               deviceLabel={`Well ${selectedWell + 1}`}
               upgrades={WELL_UPGRADE_NAMES.map(n => UPGRADES_BY_NAME[n])}
               upgradeLevels={wellUpgradeLevels[selectedWell] || mkWellUpg()}
-              qty={qty} collectedInk={collectedInk}
+              qty={qty} collectedInk={collectedInk} scale={uiScale}
               onBuy={(upgrade, count, cost) => buyDeviceUpgrade("well", selectedWell, upgrade, count, cost)} />
 
             {/* Manager upgrades */}
@@ -219,7 +220,7 @@ export function InkWellTab({
                   deviceLabel={WELL_MANAGERS[selectedMgr].name}
                   upgrades={MGR_UPGRADE_NAMES.map(n => UPGRADES_BY_NAME[n])}
                   upgradeLevels={mgrUpgradeLevels[selectedMgr] || mkMgrUpg()}
-                  qty={qty} collectedInk={collectedInk}
+                  qty={qty} collectedInk={collectedInk} scale={uiScale}
                   onBuy={(upgrade, count, cost) => buyDeviceUpgrade("manager", selectedMgr, upgrade, count, cost)} />
               </>
             )}

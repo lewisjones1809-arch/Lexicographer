@@ -1120,6 +1120,7 @@ export default function Lexicographer() {
           buyDeviceUpgrade={buyDeviceUpgrade}
           wellRefs={wellRefsArr} wellFloats={wellFloats}
           tutorialStep={tutorialStep} unlockedQtys={unlockedQtys} inkMult={effectiveInkMult}
+          uiScale={uiScale}
         />}
 
         {activeTab==="press" && <LetterPressTab
@@ -1130,6 +1131,7 @@ export default function Lexicographer() {
           buyDeviceUpgrade={buyDeviceUpgrade}
           recentTiles={recentTiles} pressEjects={pressEjects} clearPressEject={clearPressEject}
           unlockedQtys={unlockedQtys} maxLetters={effectiveMaxLetters}
+          uiScale={uiScale}
         />}
 
         {activeTab==="shop" && <ShopTab
@@ -1142,10 +1144,12 @@ export default function Lexicographer() {
           unlockedQtys={unlockedQtys}
           currentUser={currentUser} onShowAuth={() => setShowAuthModal(true)}
           onBuyIap={handleBuyIap} onLogout={handleLogout}
+          uiScale={uiScale}
         />}
 
         {activeTab==="published" && <LibraryTab
           publishedLexicons={publishedLexicons} quills={quills} goldenNotebooks={goldenNotebooks}
+          uiScale={uiScale}
         />}
       </div>
 
