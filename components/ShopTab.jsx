@@ -44,6 +44,7 @@ function getUpgCard(upg, level) {
 export function ShopTab({ quills, goldenNotebooks, ownedCovers, ownedPages, activeCoverId, activePageId, setActiveCoverId, setActivePageId, buyItem, showMsg, permUpgradeLevels, buyPermUpgrade, unlockedQtys = [1], currentUser, onShowAuth, onBuyIap, uiScale = 1 }) {
   const sc = n => Math.round(n * uiScale);
   const [shopTab, setShopTab] = useState("design");
+  const [designTab, setDesignTab] = useState("covers");
   const [qty, setQty] = useState(1);
   const shopTabs = [
     { id:"upgrades", label:"Upgrades"    },
@@ -173,13 +174,26 @@ export function ShopTab({ quills, goldenNotebooks, ownedCovers, ownedPages, acti
 
       {/* Book Design */}
       {shopTab === "design" && (
-        <div>
-          {/* Covers */}
-          <div style={st.panel}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-              <div style={{ fontSize:sc(14), fontFamily:"'BLKCHCRY',serif", color:P.textPrimary, fontWeight:700, letterSpacing:1 }}>Covers</div>
-              <div style={{ fontSize:sc(11), color:P.quill, fontFamily:"'Junicode',sans-serif", display:"flex", alignItems:"center", gap:3 }}><BookMarked size={sc(11)}/> {goldenNotebooks}</div>
+        <div style={st.panel}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+            <div style={{ display:"flex", gap:4 }}>
+              {[{id:"covers", label:"Covers"}, {id:"pages", label:"Page Styles"}].map(dt => (
+                <button key={dt.id} onClick={() => setDesignTab(dt.id)} style={{
+                  padding:"4px 10px", borderRadius:6, border:"none", cursor:"pointer",
+                  fontSize:sc(10), fontFamily:"'Junicode',sans-serif",
+                  background: designTab === dt.id ? P.borderLight : "transparent",
+                  color: designTab === dt.id ? P.textPrimary : P.textMuted,
+                  fontWeight: designTab === dt.id ? 700 : 400,
+                  transition:"all 0.15s",
+                }}>{dt.label}</button>
+              ))}
             </div>
+            <div style={{ fontSize:sc(11), color:P.quill, fontFamily:"'Junicode',sans-serif", display:"flex", alignItems:"center", gap:3 }}>
+              <BookMarked size={sc(11)}/> {goldenNotebooks}
+            </div>
+          </div>
+
+          {designTab === "covers" && (
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {COVERS.filter(c => !c.premiumOnly || ownedCovers.includes(c.id)).map(c => {
                 const owned = ownedCovers.includes(c.id);
@@ -211,14 +225,9 @@ export function ShopTab({ quills, goldenNotebooks, ownedCovers, ownedPages, acti
                 );
               })}
             </div>
-          </div>
+          )}
 
-          {/* Page styles */}
-          <div style={st.panel}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-              <div style={{ fontSize:sc(14), fontFamily:"'BLKCHCRY',serif", color:P.textPrimary, fontWeight:700, letterSpacing:1 }}>Page Styles</div>
-              <div style={{ fontSize:sc(11), color:P.quill, fontFamily:"'Junicode',sans-serif", display:"flex", alignItems:"center", gap:3 }}><BookMarked size={sc(11)}/> {goldenNotebooks}</div>
-            </div>
+          {designTab === "pages" && (
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {PAGE_STYLES.filter(p => !p.premiumOnly || ownedPages.includes(p.id)).map(p => {
                 const owned = ownedPages.includes(p.id);
@@ -250,7 +259,7 @@ export function ShopTab({ quills, goldenNotebooks, ownedCovers, ownedPages, acti
                 );
               })}
             </div>
-          </div>
+          )}
         </div>
       )}
 
