@@ -1004,7 +1004,7 @@ export default function Lexicographer() {
     <div className="lex-app-inner" style={{ color:P.textPrimary, fontFamily:"'Junicode', sans-serif" }}>
 
       <div style={{ textAlign:"center", padding:"16px 16px 0", position:"relative", zIndex:1 }}>
-        <h1 style={{ fontFamily:"'BLKCHCRY',serif", fontSize:26, fontWeight:700, letterSpacing:1, margin:0, color:P.textPrimary }}>Lexicographer</h1>
+        <h1 className="lex-title" style={{ fontFamily:"'BLKCHCRY',serif", fontWeight:700, letterSpacing:1, margin:0, color:P.textPrimary }}>Lexicographer</h1>
         <div style={{ width:80, height:1, margin:"6px auto", background:P.border }}/>
       </div>
 

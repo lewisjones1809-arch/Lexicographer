@@ -33,6 +33,7 @@ export function LexiconTab({
   }, []);
   const bookH = Math.max(300, Math.min(Math.floor(viewH * 0.6), 640));
   const bookW = Math.round(bookH * (280 / 360));
+  const monkeyScale = bookH / 360;
 
   // Auto-remove monkey animations after their duration
   useEffect(() => {
@@ -74,7 +75,7 @@ export function LexiconTab({
     const visible = indices.filter(i => i < monkeyCount);
     if (visible.length === 0) return null;
     return (
-      <div style={{ display:"flex", flexDirection:"column", justifyContent:"space-evenly", alignItems:"center", width:44 }}>
+      <div style={{ display:"flex", flexDirection:"column", justifyContent:"space-evenly", alignItems:"center", width:Math.round(44 * monkeyScale) }}>
         {visible.map(i => (
           <div key={i} style={{ position:"relative", display:"flex", justifyContent:"center" }}>
             {/* Floating animations */}
@@ -90,7 +91,7 @@ export function LexiconTab({
                     : { duration: 2, ease: "easeOut", times: [0, 0.15, 1] }
                   }
                   style={{
-                    fontSize:10, fontFamily:"'Junicode',sans-serif",
+                    fontSize:Math.round(10 * monkeyScale), fontFamily:"'Junicode',sans-serif",
                     color: anim.type === "success" ? P.sage : P.rose,
                     whiteSpace:"nowrap",
                   }}
@@ -102,11 +103,11 @@ export function LexiconTab({
             {/* Monkey card */}
             <div style={{
               background:P.panelBg, border:`1px solid ${P.border}`,
-              borderRadius:8, padding:"5px 4px",
+              borderRadius:8, padding:`${Math.round(5 * monkeyScale)}px ${Math.round(4 * monkeyScale)}px`,
               display:"flex", flexDirection:"column", alignItems:"center", gap:2,
             }}>
-              <Keyboard size={16} color={P.textSecondary} />
-              <div style={{ fontSize:8, fontFamily:"'Junicode',sans-serif", color:P.textMuted, letterSpacing:0.5 }}>
+              <Keyboard size={Math.round(16 * monkeyScale)} color={P.textSecondary} />
+              <div style={{ fontSize:Math.round(8 * monkeyScale), fontFamily:"'Junicode',sans-serif", color:P.textMuted, letterSpacing:0.5 }}>
                 {formatMonkeyTimer(monkeyTimers ? (monkeyTimers[i] ?? 300) : 300)}
               </div>
             </div>

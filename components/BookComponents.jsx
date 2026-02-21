@@ -155,12 +155,12 @@ export function BookView({ entries, cover, pageStyle, currentPage, setCurrentPag
             display:"flex", justifyContent:"space-between", alignItems:"center",
             borderBottom:`1px solid ${pageStyle.accent}40`, paddingBottom:8, marginBottom:10
           }}>
-            <span style={{ fontFamily:"'Junicode',serif", fontSize:10, color:pageStyle.accent, letterSpacing:1 }}>
+            <span style={{ fontFamily:"'Junicode',serif", fontSize:Math.round(10 * scale), color:pageStyle.accent, letterSpacing:1 }}>
               {volumeNumber != null ? `Volume ${toRoman(volumeNumber)}` : "Lexicon"}
             </span>
             {entries.length > 0 && (
-              <span style={{ fontFamily:"'Junicode',sans-serif", fontSize:9, color:pageStyle.accent, display:"inline-flex", alignItems:"center", gap:2 }}>
-                <Aperture size={8}/>{entries.reduce((s,e)=>s+e.score,0)} total
+              <span style={{ fontFamily:"'Junicode',sans-serif", fontSize:Math.round(9 * scale), color:pageStyle.accent, display:"inline-flex", alignItems:"center", gap:2 }}>
+                <Aperture size={Math.round(8 * scale)}/>{entries.reduce((s,e)=>s+e.score,0)} total
               </span>
             )}
           </div>
@@ -199,11 +199,11 @@ export function BookView({ entries, cover, pageStyle, currentPage, setCurrentPag
                     ))}
                   </div>
                   <span style={{
-                    fontFamily:"'Junicode',sans-serif", fontSize:9,
+                    fontFamily:"'Junicode',sans-serif", fontSize:Math.round(9 * scale),
                     color:pageStyle.accent, whiteSpace:"nowrap", marginLeft:4, flexShrink:0,
                   }}>
                     <span style={{ display:"inline-flex", alignItems:"center", gap:2 }}>
-                      <Aperture size={8}/>{entry.score}
+                      <Aperture size={Math.round(8 * scale)}/>{entry.score}
                     </span>
                   </span>
                 </motion.div>
@@ -221,7 +221,7 @@ export function BookView({ entries, cover, pageStyle, currentPage, setCurrentPag
           <div style={{
             borderTop:`1px solid ${pageStyle.accent}30`, paddingTop:6, marginTop:4,
             display:"flex", justifyContent:"space-between", alignItems:"center",
-            fontFamily:"'Junicode',sans-serif", fontSize:10, color:pageStyle.accent
+            fontFamily:"'Junicode',sans-serif", fontSize:Math.round(10 * scale), color:pageStyle.accent
           }}>
             <span style={{ minWidth:40 }}>{entries.length > 0 ? `${entries.length} word${entries.length !== 1 ? "s" : ""}` : ""}</span>
             {onPublish && (
@@ -231,9 +231,9 @@ export function BookView({ entries, cover, pageStyle, currentPage, setCurrentPag
                 borderRadius:4, padding:"2px 8px",
                 color: entries.length >= 10 ? pageStyle.accent : `${pageStyle.accent}40`,
                 cursor: entries.length >= 10 ? "pointer" : "default",
-                fontFamily:"'Junicode',sans-serif", fontSize:9,
+                fontFamily:"'Junicode',sans-serif", fontSize:Math.round(9 * scale),
               }}>
-                <Feather size={8}/> {entries.length >= 10 ? "Publish" : `${entries.length}/10`}
+                <Feather size={Math.round(8 * scale)}/> {entries.length >= 10 ? "Publish" : `${entries.length}/10`}
               </button>
             )}
             <span style={{ minWidth:40, textAlign:"right" }}>pg.{page + 1}</span>

@@ -41,6 +41,9 @@ button, [role="button"] { touch-action: manipulation; }
   .lex-form-col { flex: 1; padding-left: 20px; overflow-y: auto; }
 }
 
+/* Title scales with viewport width */
+.lex-title { font-size: clamp(20px, 2vw, 44px); }
+
 /* === RESPONSIVE TWEAKS === */
 @media (max-width: 480px) {
   .lex-tab-btn { font-size: 10px !important; padding: 10px 2px !important; }
