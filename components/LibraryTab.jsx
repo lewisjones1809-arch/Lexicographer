@@ -31,7 +31,7 @@ export function LibraryTab({ publishedLexicons, uiScale = 1 }) {
             <Feather size={10}/><span>{fmt(pub.quillsEarned)} quills</span>
           </div>
         </div>
-        <BookView entries={entries} cover={cover} pageStyle={page} startOpen={true}
+        <BookView entries={entries} cover={cover} pageStyle={page}
           onClose={() => setOpenBook(null)} volumeNumber={pub.index} />
       </div>
     );

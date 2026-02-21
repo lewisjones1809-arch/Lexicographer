@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { FeatherIcon as Feather, ApertureIcon as Aperture } from "../assets/icons";
 import { P } from "../styles.js";
 import { WORDS_PER_PAGE, TILE_TYPES, LETTER_SCORES } from "../constants.js";
@@ -19,13 +18,6 @@ function toRoman(n) {
   return r;
 }
 
-function shadeColor(hex, amt) {
-  const num = parseInt(hex.replace('#', ''), 16);
-  const r = Math.min(255, Math.max(0, (num >> 16) + amt));
-  const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + amt));
-  const b = Math.min(255, Math.max(0, (num & 0xff) + amt));
-  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
-}
 
 function BookTile({ letter, type, size }) {
   const tt = TILE_TYPES[type] || TILE_TYPES.normal;
@@ -130,20 +122,48 @@ function IFCPage({ cover, scale, volumeNumber }) {
         Vol.{toRoman(volumeNumber ?? 1)}
       </div>
       <div style={{ width: s(44), height: 1, background: `${cover.accent}35` }}/>
-      <div style={{ fontSize: s(7), color: `${cover.accent}50`, fontFamily: "'Junicode',serif", letterSpacing: 1 }}>
-        A Record of Words
-      </div>
     </div>
   );
 }
 
-function EmptyPage({ pageStyle, scale }) {
+function EmptyPage({ pageStyle, scale, slotNum, volumeNumber, allEntries }) {
   const s = n => Math.round(n * scale);
   return (
-    <div style={{ position: "absolute", inset: 0, padding: `${s(16)}px ${s(14)}px` }}>
-      {Array.from({ length: 12 }).map((_, i) => (
-        <div key={i} style={{ borderBottom: `1px solid ${pageStyle.accent}08`, height: s(20) }}/>
-      ))}
+    <div style={{
+      position: "absolute", inset: 0,
+      padding: `${s(6)}px ${s(10)}px ${s(10)}px`,
+      display: "flex", flexDirection: "column",
+    }}>
+      <div style={{ textAlign: "center", paddingBottom: s(1), flexShrink: 0 }}>
+        <span style={{ fontFamily: "'Junicode',serif", fontSize: s(9), color: pageStyle.accent, letterSpacing: 1 }}>
+          {volumeNumber != null ? `Volume ${toRoman(volumeNumber)}` : "Lexicon"}
+        </span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: s(2), marginBottom: s(2), flexShrink: 0 }}>
+        <div style={{ flex: 1, height: 1, background: `${pageStyle.accent}35` }}/>
+        <span style={{ color: `${pageStyle.accent}60`, fontFamily: "'Junicode',serif", fontSize: s(8), lineHeight: 1 }}>❦</span>
+        <div style={{ flex: 1, height: 1, background: `${pageStyle.accent}35` }}/>
+      </div>
+      <div style={{ flex: 1, overflow: "hidden" }}>
+        {Array.from({ length: WORDS_PER_PAGE }).map((_, i) => (
+          <div key={i} style={{ borderBottom: `1px dashed ${pageStyle.accent}08`, height: s(20), flexShrink: 0 }}/>
+        ))}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: s(2), marginTop: s(2), flexShrink: 0 }}>
+        <div style={{ flex: 1, height: 1, background: `${pageStyle.accent}30` }}/>
+        <span style={{ color: `${pageStyle.accent}50`, fontFamily: "'Junicode',serif", fontSize: s(8), lineHeight: 1 }}>❦</span>
+        <div style={{ flex: 1, height: 1, background: `${pageStyle.accent}30` }}/>
+      </div>
+      <div style={{
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        paddingTop: s(2), flexShrink: 0,
+        fontFamily: "'Junicode',sans-serif", fontSize: s(9), color: pageStyle.accent,
+      }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+          <Aperture size={s(7)}/>{(allEntries ?? []).reduce((sum, e) => sum + e.score, 0)}
+        </span>
+        <span>{slotNum}</span>
+      </div>
     </div>
   );
 }
@@ -154,23 +174,20 @@ function WordPage({ slotNum, pageEntries, allEntries, pageStyle, scale, hoveredE
   return (
     <div style={{
       position: "absolute", inset: 0,
-      padding: `${s(12)}px ${s(10)}px`,
+      padding: `${s(6)}px ${s(10)}px ${s(10)}px`,
       display: "flex", flexDirection: "column",
     }}>
-      {/* Page header */}
-      <div style={{
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        borderBottom: `1px solid ${pageStyle.accent}40`,
-        paddingBottom: s(6), marginBottom: s(8), flexShrink: 0,
-      }}>
+      {/* Page header — volume title centred */}
+      <div style={{ textAlign: "center", paddingBottom: s(1), flexShrink: 0 }}>
         <span style={{ fontFamily: "'Junicode',serif", fontSize: s(9), color: pageStyle.accent, letterSpacing: 1 }}>
           {volumeNumber != null ? `Volume ${toRoman(volumeNumber)}` : "Lexicon"}
         </span>
-        {allEntries.length > 0 && (
-          <span style={{ fontFamily: "'Junicode',sans-serif", fontSize: s(8), color: pageStyle.accent, display: "inline-flex", alignItems: "center", gap: 2 }}>
-            <Aperture size={s(7)}/>{allEntries.reduce((sum, e) => sum + e.score, 0)} total
-          </span>
-        )}
+      </div>
+      {/* Ornate rule */}
+      <div style={{ display: "flex", alignItems: "center", gap: s(2), marginBottom: s(2), flexShrink: 0 }}>
+        <div style={{ flex: 1, height: 1, background: `${pageStyle.accent}35` }}/>
+        <span style={{ color: `${pageStyle.accent}60`, fontFamily: "'Junicode',serif", fontSize: s(8), lineHeight: 1 }}>❦</span>
+        <div style={{ flex: 1, height: 1, background: `${pageStyle.accent}35` }}/>
       </div>
 
       {/* Word list */}
@@ -189,11 +206,8 @@ function WordPage({ slotNum, pageEntries, allEntries, pageStyle, scale, hoveredE
           const tileSize = Math.max(8, Math.min(s(15), fitted));
           const isHovered = interactive && hoveredEntry?.index === wi && hoveredEntry?.slotNum === slotNum;
           return (
-            <motion.div
+            <div
               key={wi}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, ease: "easeOut", delay: wi * 0.03 }}
               onMouseEnter={interactive ? e => setHoveredEntry({ index: wi, slotNum, tileLetters, rect: e.currentTarget.getBoundingClientRect() }) : undefined}
               onMouseLeave={interactive ? () => setHoveredEntry(null) : undefined}
               style={{
@@ -212,7 +226,7 @@ function WordPage({ slotNum, pageEntries, allEntries, pageStyle, scale, hoveredE
                   <Aperture size={s(7)}/>{entry.score}
                 </span>
               </span>
-            </motion.div>
+            </div>
           );
         })}
         {Array.from({ length: WORDS_PER_PAGE - pageEntries.length }).map((_, i) => (
@@ -220,13 +234,22 @@ function WordPage({ slotNum, pageEntries, allEntries, pageStyle, scale, hoveredE
         ))}
       </div>
 
-      {/* Page number */}
+      {/* Ornate rule */}
+      <div style={{ display: "flex", alignItems: "center", gap: s(2), marginTop: s(2), flexShrink: 0 }}>
+        <div style={{ flex: 1, height: 1, background: `${pageStyle.accent}30` }}/>
+        <span style={{ color: `${pageStyle.accent}50`, fontFamily: "'Junicode',serif", fontSize: s(8), lineHeight: 1 }}>❦</span>
+        <div style={{ flex: 1, height: 1, background: `${pageStyle.accent}30` }}/>
+      </div>
+      {/* Footer — lexicoins left, page number right */}
       <div style={{
-        borderTop: `1px solid ${pageStyle.accent}30`, paddingTop: s(4), marginTop: s(4),
-        textAlign: "right", fontFamily: "'Junicode',sans-serif", fontSize: s(9),
-        color: pageStyle.accent, flexShrink: 0,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        paddingTop: s(2), flexShrink: 0,
+        fontFamily: "'Junicode',sans-serif", fontSize: s(9), color: pageStyle.accent,
       }}>
-        {slotNum}
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+          <Aperture size={s(7)}/>{allEntries.reduce((sum, e) => sum + e.score, 0)}
+        </span>
+        <span>{slotNum}</span>
       </div>
     </div>
   );
@@ -240,10 +263,12 @@ export function BookView({
   entries, cover, pageStyle,
   compact, bw: bwProp, bh: bhProp,
   onClose, volumeNumber, onPublish,
-  startOpen = false,
+  spread: controlledSpread,
+  setSpread: setControlledSpread,
 }) {
-  const [bookOpen,     setBookOpen]     = useState(startOpen);
-  const [spread,       setSpread]       = useState(0);
+  const [internalSpread, setInternalSpread] = useState(0);
+  const spread    = controlledSpread !== undefined ? controlledSpread  : internalSpread;
+  const setSpread = setControlledSpread ?? setInternalSpread;
   const [flipInfo,     setFlipInfo]     = useState(null);
   const [hoveredEntry, setHoveredEntry] = useState(null);
 
@@ -259,9 +284,7 @@ export function BookView({
   const maxSpread    = totalSpreads - 1;
   const currentSpread = Math.min(spread, maxSpread);
 
-  const spineW   = s(6);
-  const foreEdge = s(16);
-  const bands    = Math.min(Math.max(N * 2, 3), 18);
+  const spineW = 0;
 
   // Clamp spread when entries shrink (e.g. publish resets lexicon)
   useEffect(() => {
@@ -269,15 +292,6 @@ export function BookView({
   }, [maxSpread]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Cover pattern ──────────────────────────────────
-  const coverPatternStyle =
-    cover.pattern === "gold-border"
-      ? { boxShadow: `inset 0 0 0 6px ${cover.accent}40, inset 0 0 0 8px ${cover.accent}20` }
-    : cover.pattern === "sigils"
-      ? { backgroundImage: `radial-gradient(circle at 30% 40%, ${cover.accent}15 0%, transparent 50%), radial-gradient(circle at 70% 60%, ${cover.accent}10 0%, transparent 40%)` }
-    : cover.pattern === "stars"
-      ? { backgroundImage: `radial-gradient(1px 1px at 20% 30%, ${cover.accent}80 0%, transparent 100%), radial-gradient(1px 1px at 50% 70%, ${cover.accent}60 0%, transparent 100%), radial-gradient(1px 1px at 80% 20%, ${cover.accent}40 0%, transparent 100%), radial-gradient(1.5px 1.5px at 35% 85%, ${cover.accent}70 0%, transparent 100%)` }
-    : {};
-
   // ── Slot helpers ───────────────────────────────────
   const getSlotContent = (idx) => {
     if (idx <= 0) return { type: "ifc" };
@@ -296,7 +310,7 @@ export function BookView({
     if (slot.type === "ifc")
       return <IFCPage cover={cover} scale={scale} volumeNumber={volumeNumber} />;
     if (slot.type === "empty")
-      return <EmptyPage pageStyle={pageStyle} scale={scale} />;
+      return <EmptyPage pageStyle={pageStyle} scale={scale} slotNum={idx} volumeNumber={volumeNumber} allEntries={sorted} />;
     return (
       <WordPage
         slotNum={slot.slotNum}
@@ -312,40 +326,9 @@ export function BookView({
     );
   };
 
-  // Reusable front-cover face (used in closed state AND opening flip front face)
-  const renderCoverFace = () => (
-    <div style={{ position: "absolute", inset: 0, background: cover.color, ...coverPatternStyle }}>
-      {/* Spine */}
-      <div style={{
-        position: "absolute", left: 0, top: 0, bottom: 0, width: s(18),
-        background: `linear-gradient(90deg, ${cover.accent}40, ${cover.accent}15 60%, transparent)`,
-        borderRight: `1px solid ${cover.accent}45`,
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: s(6),
-      }}>
-        {[0,1,2].map(i => (
-          <div key={i} style={{ width: s(3), height: s(3), borderRadius: "50%", background: `${cover.accent}70` }}/>
-        ))}
-      </div>
-      {/* Cover title */}
-      <div style={{
-        position: "absolute", left: s(22), top: s(10), right: s(8),
-        display: "flex", flexDirection: "column", alignItems: "center", gap: s(4),
-        pointerEvents: "none",
-      }}>
-        <div style={{ fontSize: s(7), color: `${cover.accent}80`, fontFamily: "'Junicode',serif", letterSpacing: 2, textTransform: "uppercase" }}>
-          Lexicographer
-        </div>
-        <div style={{ width: s(32), height: 1, background: `${cover.accent}35` }}/>
-        <div style={{ fontSize: s(12), color: `${cover.accent}cc`, fontFamily: "'BLKCHCRY',serif" }}>
-          Vol.{toRoman(volumeNumber ?? 1)}
-        </div>
-      </div>
-    </div>
-  );
-
   // ── Static page slot indices (adjusted during flips) ───
   let leftSlotIdx, rightSlotIdx;
-  if (!flipInfo || flipInfo.dir === "opening") {
+  if (!flipInfo) {
     leftSlotIdx  = currentSpread * 2;
     rightSlotIdx = currentSpread * 2 + 1;
   } else if (flipInfo.dir === 1) {
@@ -357,13 +340,6 @@ export function BookView({
   }
 
   // ── Handlers ───────────────────────────────────────
-  const handleOpen = () => {
-    setHoveredEntry(null);
-    setBookOpen(true);
-    setSpread(0);
-    setFlipInfo({ dir: "opening", fromSpread: 0 });
-  };
-
   const goForward = () => {
     if (flipInfo || currentSpread >= maxSpread) return;
     setHoveredEntry(null);
@@ -378,89 +354,70 @@ export function BookView({
 
   const handleFlipEnd = () => {
     if (!flipInfo) return;
-    if      (flipInfo.dir === 1)  setSpread(flipInfo.fromSpread + 1);
-    else if (flipInfo.dir === -1) setSpread(flipInfo.fromSpread - 1);
-    // "opening": no spread change
-    setFlipInfo(null);
+    const { dir, fromSpread } = flipInfo;
+    // Defer by one frame so the browser paints the animation's final state
+    // before React swaps in the static pages — eliminates the end-of-flip snap.
+    requestAnimationFrame(() => {
+      if      (dir === 1)  setSpread(fromSpread + 1);
+      else if (dir === -1) setSpread(fromSpread - 1);
+      setFlipInfo(null);
+    });
   };
 
-  const canGoForward = bookOpen && !flipInfo && currentSpread < maxSpread;
-  const canGoBack    = bookOpen && !flipInfo && currentSpread > 0;
+  const canGoForward = !flipInfo && currentSpread < maxSpread;
+  const canGoBack    = !flipInfo && currentSpread > 0;
+
+  // Add/remove body class so CSS can lift the tab-content stacking context
+  // above the header and clear parent overflow during the animation.
+  useEffect(() => {
+    if (flipInfo) {
+      document.body.classList.add("book-flipping");
+    } else {
+      document.body.classList.remove("book-flipping");
+    }
+    return () => document.body.classList.remove("book-flipping");
+  }, [!!flipInfo]);
 
   // ── Dimensions ────────────────────────────────────
-  const openW   = bw * 2 + spineW;
-  const closedW = bw + foreEdge;
+  const openW = bw * 2 + spineW;
 
   // ── Page face shared styles ────────────────────────
-  const leftPageStyle  = { position: "absolute", left: 0, top: 0, width: bw, height: bh, borderRadius: `${s(4)}px 0 0 ${s(4)}px`, overflow: "hidden" };
-  const rightPageStyle = { position: "absolute", left: bw + spineW, top: 0, width: bw, height: bh, borderRadius: `0 ${s(4)}px ${s(4)}px 0`, overflow: "hidden" };
+  const leftPageStyle  = { position: "absolute", left: 0, top: 0, width: bw, height: bh, overflow: "hidden", borderRadius: `${s(3)}px 0 0 ${s(3)}px` };
+  const rightPageStyle = { position: "absolute", left: bw + spineW, top: 0, width: bw, height: bh, overflow: "hidden", borderRadius: `0 ${s(3)}px ${s(3)}px 0` };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
 
-      {/* ── Book container ────────────────────────────── */}
+      {/* ── Leather board ─────────────────────────────── */}
+      {/* Border + top-highlight baked into the board itself so no overlay div
+          competes with the flip animation's stacking context. */}
       <div
         className={compact ? "lex-book-compact" : undefined}
         style={{
-          width: bookOpen ? openW : closedW,
-          height: bh,
           position: "relative",
-          transition: "width 0.28s ease",
-          perspective: bookOpen ? "1400px" : undefined,
+          background: cover.color,
+          backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.06) 0%, transparent 18%), repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0,0,0,0.04) 1px, rgba(0,0,0,0.04) 2px)`,
+          padding: `${s(5)}px`,
+          borderRadius: s(5),
+          border: `1px solid ${cover.accent}30`,
+          boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
         }}
       >
-        {!bookOpen ? (
 
-          /* ════════════════ CLOSED COVER ════════════════ */
-          <>
-            {/* Fore-edge page stack */}
-            <div style={{
-              position: "absolute", right: 0, top: s(6), bottom: s(6),
-              width: foreEdge, borderRadius: `0 ${s(4)}px ${s(4)}px 0`,
-              overflow: "hidden", boxShadow: "2px 2px 10px rgba(0,0,0,0.35)",
-              display: "flex", flexDirection: "column",
-            }}>
-              {Array.from({ length: bands }).map((_, i) => (
-                <div key={i} style={{
-                  flex: 1,
-                  background: i % 2 === 0 ? pageStyle.bg : shadeColor(pageStyle.bg, -10),
-                  borderBottom: i < bands - 1 ? "0.5px solid rgba(0,0,0,0.1)" : "none",
-                }}/>
-              ))}
-            </div>
-
-            {/* Cover body — clickable */}
-            <div
-              onClick={handleOpen}
-              style={{
-                position: "absolute", left: 0, top: 0, width: bw, height: bh,
-                borderRadius: `${s(4)}px 0 0 ${s(4)}px`,
-                background: cover.color,
-                border: `2px solid ${cover.accent}50`,
-                boxShadow: "0 8px 28px rgba(0,0,0,0.35), inset -4px 0 10px rgba(0,0,0,0.18)",
-                cursor: "pointer", overflow: "hidden",
-                ...coverPatternStyle,
-              }}
-            >
-              {renderCoverFace()}
-              {/* "open" hint */}
-              <div style={{
-                position: "absolute", bottom: s(10), left: 0, right: 0,
-                textAlign: "center", fontSize: s(6), color: `${cover.accent}45`,
-                fontFamily: "'Junicode',serif", letterSpacing: 1, pointerEvents: "none",
-              }}>open</div>
-            </div>
-          </>
-
-        ) : (
-
-          /* ════════════════ OPEN SPREAD ════════════════ */
-          <>
+        {/* ── Book container ──────────────────────────── */}
+        <div style={{
+          width: openW,
+          height: bh,
+          position: "relative",
+          willChange: "transform",
+        }}
+      >
+        {/* ════════════════ OPEN SPREAD ════════════════ */}
+        <>
             {/* Left page */}
             <div style={{
               ...leftPageStyle,
               background: getPageBg(leftSlotIdx),
-              boxShadow: "inset -6px 0 10px rgba(0,0,0,0.10), -2px 4px 20px rgba(0,0,0,0.2)",
             }}>
               {renderSlot(leftSlotIdx)}
             </div>
@@ -475,109 +432,121 @@ export function BookView({
             <div style={{
               ...rightPageStyle,
               background: getPageBg(rightSlotIdx),
-              boxShadow: "inset 6px 0 10px rgba(0,0,0,0.10), 2px 4px 20px rgba(0,0,0,0.2)",
             }}>
-              {/* Fore-edge bands on right edge */}
-              <div style={{
-                position: "absolute", right: 0, top: s(4), bottom: s(4), width: s(8),
-                overflow: "hidden", display: "flex", flexDirection: "column", pointerEvents: "none",
-              }}>
-                {Array.from({ length: bands }).map((_, i) => (
-                  <div key={i} style={{ flex: 1, background: i % 2 === 0 ? pageStyle.bg : shadeColor(pageStyle.bg, -8) }}/>
-                ))}
-              </div>
               {renderSlot(rightSlotIdx)}
             </div>
 
             {/* ── FORWARD flip element (dir=1 or "opening") ── */}
             {flipInfo && (flipInfo.dir === 1 || flipInfo.dir === "opening") && (
-              <div
-                className="lex-flip-fwd"
-                onAnimationEnd={handleFlipEnd}
-                style={{
-                  position: "absolute", left: bw + spineW, top: 0,
-                  width: bw, height: bh,
-                  transformOrigin: "0% 50%",
-                  transformStyle: "preserve-3d",
-                  zIndex: 10,
-                }}
-              >
-                {/* Front face — old right page (or front cover for opening) */}
-                <div style={{
-                  position: "absolute", inset: 0,
-                  backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
-                  background: flipInfo.dir === "opening" ? cover.color : getPageBg(flipInfo.fromSpread * 2 + 1),
-                  borderRadius: `0 ${s(4)}px ${s(4)}px 0`,
-                  overflow: "hidden",
-                  boxShadow: "inset 6px 0 10px rgba(0,0,0,0.10)",
-                }}>
-                  {flipInfo.dir === "opening"
-                    ? renderCoverFace()
-                    : renderSlot(flipInfo.fromSpread * 2 + 1, { isFlipFace: true })
-                  }
-                </div>
-                {/* Back face — new left page */}
-                <div style={{
-                  position: "absolute", inset: 0,
-                  backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
-                  transform: "rotateY(180deg)",
-                  background: getPageBg(flipInfo.dir === "opening" ? 0 : (flipInfo.fromSpread + 1) * 2),
-                  borderRadius: `${s(4)}px 0 0 ${s(4)}px`,
-                  overflow: "hidden",
-                  boxShadow: "inset -6px 0 10px rgba(0,0,0,0.10)",
-                }}>
-                  {flipInfo.dir === "opening"
-                    ? renderSlot(0, { isFlipFace: true })
-                    : renderSlot((flipInfo.fromSpread + 1) * 2, { isFlipFace: true })
-                  }
+              // Wrapper owns perspective so only the flip element is in a 3D context —
+              // perspectiveOrigin "0% 50%" puts the vanishing point at the rotation axis.
+              <div style={{
+                position: "absolute", left: bw + spineW, top: 0,
+                width: bw, height: bh,
+                perspective: "900px", perspectiveOrigin: "0% 50%",
+                zIndex: 10,
+              }}>
+                <div
+                  className="lex-flip-fwd"
+                  onAnimationEnd={handleFlipEnd}
+                  style={{
+                    position: "absolute", inset: 0,
+                    transformOrigin: "0% 50%",
+                    transformStyle: "preserve-3d",
+                  }}
+                >
+                  {/* Front face — old right page (or front cover for opening) */}
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
+                    background: flipInfo.dir === "opening" ? cover.color : getPageBg(flipInfo.fromSpread * 2 + 1),
+                    borderRadius: `0 ${s(4)}px ${s(4)}px 0`,
+                    overflow: "hidden",
+                  }}>
+                    {flipInfo.dir === "opening"
+                      ? renderCoverFace()
+                      : renderSlot(flipInfo.fromSpread * 2 + 1, { isFlipFace: true })
+                    }
+                  </div>
+                  {/* Back face — new left page */}
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
+                    transform: "rotateY(180deg)",
+                    background: getPageBg(flipInfo.dir === "opening" ? 0 : (flipInfo.fromSpread + 1) * 2),
+                    borderRadius: `${s(4)}px 0 0 ${s(4)}px`,
+                    overflow: "hidden",
+                  }}>
+                    {flipInfo.dir === "opening"
+                      ? renderSlot(0, { isFlipFace: true })
+                      : renderSlot((flipInfo.fromSpread + 1) * 2, { isFlipFace: true })
+                    }
+                  </div>
                 </div>
               </div>
             )}
 
             {/* ── BACKWARD flip element (dir=-1) ── */}
             {flipInfo && flipInfo.dir === -1 && (
-              <div
-                className="lex-flip-bwd"
-                onAnimationEnd={handleFlipEnd}
-                style={{
-                  position: "absolute", left: 0, top: 0,
-                  width: bw, height: bh,
-                  transformOrigin: "100% 50%",
-                  transformStyle: "preserve-3d",
-                  zIndex: 10,
-                }}
-              >
-                {/* Front face — old left page */}
-                <div style={{
-                  position: "absolute", inset: 0,
-                  backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
-                  background: getPageBg(flipInfo.fromSpread * 2),
-                  borderRadius: `${s(4)}px 0 0 ${s(4)}px`,
-                  overflow: "hidden",
-                  boxShadow: "inset -6px 0 10px rgba(0,0,0,0.10)",
-                }}>
-                  {renderSlot(flipInfo.fromSpread * 2, { isFlipFace: true })}
-                </div>
-                {/* Back face — prev right page */}
-                <div style={{
-                  position: "absolute", inset: 0,
-                  backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
-                  transform: "rotateY(180deg)",
-                  background: getPageBg((flipInfo.fromSpread - 1) * 2 + 1),
-                  borderRadius: `0 ${s(4)}px ${s(4)}px 0`,
-                  overflow: "hidden",
-                  boxShadow: "inset 6px 0 10px rgba(0,0,0,0.10)",
-                }}>
-                  {renderSlot((flipInfo.fromSpread - 1) * 2 + 1, { isFlipFace: true })}
+              // perspectiveOrigin "100% 50%" puts the vanishing point at the rotation axis.
+              <div style={{
+                position: "absolute", left: 0, top: 0,
+                width: bw, height: bh,
+                perspective: "900px", perspectiveOrigin: "100% 50%",
+                zIndex: 10,
+              }}>
+                <div
+                  className="lex-flip-bwd"
+                  onAnimationEnd={handleFlipEnd}
+                  style={{
+                    position: "absolute", inset: 0,
+                    transformOrigin: "100% 50%",
+                    transformStyle: "preserve-3d",
+                  }}
+                >
+                  {/* Front face — old left page */}
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
+                    background: getPageBg(flipInfo.fromSpread * 2),
+                    borderRadius: `${s(4)}px 0 0 ${s(4)}px`,
+                    overflow: "hidden",
+                  }}>
+                    {renderSlot(flipInfo.fromSpread * 2, { isFlipFace: true })}
+                  </div>
+                  {/* Back face — prev right page */}
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
+                    transform: "rotateY(180deg)",
+                    background: getPageBg((flipInfo.fromSpread - 1) * 2 + 1),
+                    borderRadius: `0 ${s(4)}px ${s(4)}px 0`,
+                    overflow: "hidden",
+                  }}>
+                    {renderSlot((flipInfo.fromSpread - 1) * 2 + 1, { isFlipFace: true })}
+                  </div>
                 </div>
               </div>
             )}
-          </>
-        )}
+
+            {/* Gutter depth overlays — wider gradients meeting at the fold create a
+                natural spine shadow; zIndex 15 keeps them above the flip element */}
+            <div style={{
+              position: "absolute", left: bw - s(14), top: 0, width: s(14), height: bh,
+              background: "linear-gradient(90deg, transparent, rgba(0,0,0,0.07) 55%, rgba(0,0,0,0.28))",
+              pointerEvents: "none", zIndex: 15,
+            }}/>
+            <div style={{
+              position: "absolute", left: bw, top: 0, width: s(14), height: bh,
+              background: "linear-gradient(90deg, rgba(0,0,0,0.28), rgba(0,0,0,0.07) 45%, transparent)",
+              pointerEvents: "none", zIndex: 15,
+            }}/>
+        </>
+        </div>
       </div>
 
-      {/* ── Navigation (only when open) ─────────────── */}
-      {bookOpen && totalSpreads > 1 && (
+      {/* ── Navigation ─────────────── */}
+      {totalSpreads > 1 && (
         <div style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 12 }}>
           <button
             onClick={goBackward}
@@ -605,7 +574,7 @@ export function BookView({
         </div>
       )}
 
-      {bookOpen && onPublish && (() => {
+      {onPublish && (() => {
         const canPublish = sorted.length >= 10;
         return (
           <button

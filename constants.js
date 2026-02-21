@@ -36,7 +36,7 @@ export const PRESS_MANAGERS = [
 ];
 
 export const TILE_TYPES = {
-  normal:        { label:"",   badge:"",    color:"#f5f2ec", border:"#d0c8bc", text:"#2c2420" },
+  normal:        { label:"",   badge:"",    color:"#fdf8e4", border:"#c4b46a", text:"#1a1008" },
   double_letter: { label:"DL", badge:"×2",  color:"#fce8e8", border:"#e8b8b8", text:"#9b2020" },
   triple_letter: { label:"TL", badge:"×3",  color:"#fef0e0", border:"#e8c4a0", text:"#a04800" },
   double_word:   { label:"DW", badge:"W×2", color:"#e8f0fc", border:"#b8c8e8", text:"#1a3a7a" },

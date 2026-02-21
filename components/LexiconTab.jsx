@@ -26,16 +26,18 @@ export function LexiconTab({
   const [pendingLexiconTileId, setPendingLexiconTileId] = useState(null);
   const [viewH, setViewH] = useState(window.innerHeight);
   const [viewW, setViewW] = useState(window.innerWidth);
+  const [bookSpread, setBookSpread] = useState(0);
   useEffect(() => {
     const onResize = () => { setViewH(window.innerHeight); setViewW(window.innerWidth); };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
   const isWide = viewW >= 1400;
-  const bookH = isWide
-    ? Math.max(240, Math.min(Math.floor(viewH * 0.46), 480))
-    : Math.max(200, Math.min(Math.floor(viewH * 0.38), 360));
-  const bookW = Math.round(bookH * 0.55);
+  // bookW drives sizing; bookH derived to fit exactly 10 words per page (ratio ≈ 1.5)
+  const bookW = isWide
+    ? Math.max(130, Math.min(Math.floor(viewH * 0.25), 260))
+    : Math.max(110, Math.min(Math.floor(viewH * 0.21), 200));
+  const bookH = Math.ceil(bookW * 1.5);
   const monkeyScale = bookH / 360;
 
   // Auto-remove monkey animations after their duration
@@ -131,7 +133,8 @@ export function LexiconTab({
           {monkeyCount > 0 && monkeyColumn([0,1,2,3,4])}
           {/* Book */}
           <div style={{ flexShrink:0 }}>
-            <BookView entries={lexicon} cover={activeCover} pageStyle={activePageStyle} bw={bookW} bh={bookH} volumeNumber={volumeNumber} onPublish={publishLexicon} />
+            <BookView entries={lexicon} cover={activeCover} pageStyle={activePageStyle} bw={bookW} bh={bookH} volumeNumber={volumeNumber} onPublish={publishLexicon}
+            spread={bookSpread} setSpread={setBookSpread} />
           </div>
           {/* Right inner column: slots 10-14 */}
           {monkeyCount > 10 && monkeyColumn([10,11,12,13,14])}

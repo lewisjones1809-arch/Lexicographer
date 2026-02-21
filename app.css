@@ -48,16 +48,33 @@ button, [role="button"] { touch-action: manipulation; }
 .lex-title { font-size: clamp(14px, 3vh, 44px); }
 
 /* === BOOK PAGE-FLIP ANIMATIONS === */
+/* Per-segment timing: ease-in lifts the page, ease-out settles it — no speed bump
+   because the handoff at 42% is fast on both sides. */
 @keyframes lex-flip-fwd {
-  from { transform: rotateY(0deg);    }
-  to   { transform: rotateY(-180deg); }
+  0%   { transform: rotateY(0deg);    animation-timing-function: ease-in;  }
+  42%  { transform: rotateY(-68deg);  animation-timing-function: ease-out; }
+  100% { transform: rotateY(-180deg); }
 }
 @keyframes lex-flip-bwd {
-  from { transform: rotateY(0deg);   }
-  to   { transform: rotateY(180deg); }
+  0%   { transform: rotateY(0deg);   animation-timing-function: ease-in;  }
+  42%  { transform: rotateY(68deg);  animation-timing-function: ease-out; }
+  100% { transform: rotateY(180deg); }
 }
-.lex-flip-fwd { animation: lex-flip-fwd 0.45s ease-in-out forwards; }
-.lex-flip-bwd { animation: lex-flip-bwd 0.45s ease-in-out forwards; }
+.lex-flip-fwd { animation: lex-flip-fwd 0.7s linear forwards; }
+.lex-flip-bwd { animation: lex-flip-bwd 0.7s linear forwards; }
+
+
+
+/* While a page flip is playing: lift tab-content above the header so the 3D
+   animation isn't painted over by the header's stacking context, and clear
+   the parent overflow that would otherwise clip the 3D rendering. */
+body.book-flipping .lex-tab-content {
+  z-index: 12 !important;
+  overflow: visible !important;
+}
+body.book-flipping .lex-book-col {
+  overflow: visible !important;
+}
 
 /* === RESPONSIVE TWEAKS === */
 @media (max-width: 480px) {
