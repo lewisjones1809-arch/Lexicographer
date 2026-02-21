@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FeatherIcon as Feather, ApertureIcon as Aperture } from "../assets/icons";
 import { P } from "../styles.js";
 import { WORDS_PER_PAGE, TILE_TYPES, LETTER_SCORES } from "../constants.js";
@@ -24,7 +25,7 @@ function BookTile({ letter, type, size }) {
   return (
     <div style={{
       width: size, height: size, flexShrink: 0,
-      background: tt.color, border: `1.5px solid ${tt.border}`, borderRadius: 3,
+      background: tt.color, border: `${size < 14 ? 1 : 1.5}px solid ${tt.border}`, borderRadius: 3,
       display: "flex", alignItems: "center", justifyContent: "center",
       fontFamily: "'Junicode',serif", fontSize: size * 0.6,
       fontWeight: 700, color: tt.text, lineHeight: 1,
@@ -144,9 +145,9 @@ function EmptyPage({ pageStyle, scale, slotNum, volumeNumber, allEntries }) {
         <span style={{ color: `${pageStyle.accent}60`, fontFamily: "'Junicode',serif", fontSize: s(8), lineHeight: 1 }}>❦</span>
         <div style={{ flex: 1, height: 1, background: `${pageStyle.accent}35` }}/>
       </div>
-      <div style={{ flex: 1, overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {Array.from({ length: WORDS_PER_PAGE }).map((_, i) => (
-          <div key={i} style={{ borderBottom: `1px dashed ${pageStyle.accent}08`, height: s(20), flexShrink: 0 }}/>
+          <div key={i} style={{ borderBottom: `1px dashed ${pageStyle.accent}08`, flex: "1 1 0", minHeight: 0 }}/>
         ))}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: s(2), marginTop: s(2), flexShrink: 0 }}>
@@ -198,7 +199,6 @@ function WordPage({ slotNum, pageEntries, allEntries, pageStyle, scale, hoveredE
           </div>
         )}
         {pageEntries.map((entry, wi) => {
-          const py = Math.max(2, s(3));
           const tileLetters = entry.letters || entry.word.split("").map(l => ({ letter: l, type: "normal" }));
           const n = tileLetters.length;
           const maxAvail = bw - s(70);
@@ -212,9 +212,9 @@ function WordPage({ slotNum, pageEntries, allEntries, pageStyle, scale, hoveredE
               onMouseLeave={interactive ? () => setHoveredEntry(null) : undefined}
               style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
-                padding: `${py}px 4px`,
+                padding: `0 4px`,
                 borderBottom: wi < pageEntries.length - 1 ? `1px solid ${pageStyle.accent}15` : "none",
-                cursor: "default", flexShrink: 0,
+                cursor: "default", flex: "1 1 0", minHeight: 0, overflow: "hidden",
               }}
             >
               {isHovered && <ScoreTooltip tileLetters={tileLetters} rect={hoveredEntry.rect} />}
@@ -230,7 +230,7 @@ function WordPage({ slotNum, pageEntries, allEntries, pageStyle, scale, hoveredE
           );
         })}
         {Array.from({ length: WORDS_PER_PAGE - pageEntries.length }).map((_, i) => (
-          <div key={`empty-${i}`} style={{ borderBottom: `1px dashed ${pageStyle.accent}08`, height: s(20), flexShrink: 0 }}/>
+          <div key={`empty-${i}`} style={{ borderBottom: `1px dashed ${pageStyle.accent}08`, flex: "1 1 0", minHeight: 0 }}/>
         ))}
       </div>
 
@@ -554,10 +554,10 @@ export function BookView({
             style={{
               background: "none", border: "none",
               color: canGoBack ? P.textSecondary : P.borderLight,
-              fontSize: 20, cursor: canGoBack ? "pointer" : "default",
-              fontFamily: "'BLKCHCRY',serif",
+              cursor: canGoBack ? "pointer" : "default",
+              display: "flex", alignItems: "center",
             }}
-          >◀</button>
+          ><ChevronLeft size={18} /></button>
           <span style={{ fontSize: 12, color: P.textMuted, fontFamily: "'Junicode',sans-serif" }}>
             {currentSpread + 1} / {totalSpreads}
           </span>
@@ -567,10 +567,10 @@ export function BookView({
             style={{
               background: "none", border: "none",
               color: canGoForward ? P.textSecondary : P.borderLight,
-              fontSize: 20, cursor: canGoForward ? "pointer" : "default",
-              fontFamily: "'BLKCHCRY',serif",
+              cursor: canGoForward ? "pointer" : "default",
+              display: "flex", alignItems: "center",
             }}
-          >▶</button>
+          ><ChevronRight size={18} /></button>
         </div>
       )}
 
