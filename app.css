@@ -12,6 +12,17 @@ button, [role="button"] { touch-action: manipulation; }
   background: #f0ece4;
   display: flex;
   flex-direction: column;
+  align-items: center;
+}
+
+/* Content wrapper — max-width so the game doesn't look stretched on ultrawide screens */
+.lex-app-inner {
+  width: 100%;
+  max-width: 1400px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 /* === TWO-COLUMN LAYOUT === */
