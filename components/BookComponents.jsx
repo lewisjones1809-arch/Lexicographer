@@ -534,12 +534,12 @@ export function BookView({
             <div style={{
               position: "absolute", left: bw - s(14), top: 0, width: s(14), height: bh,
               background: "linear-gradient(90deg, transparent, rgba(0,0,0,0.07) 55%, rgba(0,0,0,0.28))",
-              pointerEvents: "none", zIndex: 15,
+              pointerEvents: "none", zIndex: 15, transform: "translateZ(0)",
             }}/>
             <div style={{
               position: "absolute", left: bw, top: 0, width: s(14), height: bh,
               background: "linear-gradient(90deg, rgba(0,0,0,0.28), rgba(0,0,0,0.07) 45%, transparent)",
-              pointerEvents: "none", zIndex: 15,
+              pointerEvents: "none", zIndex: 15, transform: "translateZ(0)",
             }}/>
         </>
         </div>
