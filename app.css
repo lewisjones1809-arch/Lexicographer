@@ -32,8 +32,8 @@ button, [role="button"] { touch-action: manipulation; }
 .lex-book-col { min-width: 0; }
 .lex-form-col { flex: 1; min-width: 0; }
 
-/* Wide (≥1000px): side-by-side, both columns fill height and scroll independently */
-@media (min-width: 1000px) {
+/* Wide (≥1400px): side-by-side, both columns fill height and scroll independently */
+@media (min-width: 1400px) {
   .lex-tab-content { overflow: hidden; display: flex; flex-direction: column; }
   .lex-tab-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .lex-lexicon-outer { flex-direction: row; align-items: stretch; flex: 1; min-height: 0; }
