@@ -111,14 +111,15 @@ function ScoreTooltip({ tileLetters, rect }) {
 }
 
 // --- BOOK VIEW (full in-page book renderer) ---
-export function BookView({ entries, cover, pageStyle, currentPage, setCurrentPage, compact, onClose, volumeNumber, onPublish }) {
+export function BookView({ entries, cover, pageStyle, currentPage, setCurrentPage, compact, bw: bwProp, bh: bhProp, onClose, volumeNumber, onPublish }) {
   const [hoveredEntry, setHoveredEntry] = useState(null);
   const sorted = sortEntries(entries);
   const totalPages = Math.max(1, Math.ceil(sorted.length / WORDS_PER_PAGE));
   const page = Math.min(currentPage, totalPages - 1);
   const pageEntries = sorted.slice(page * WORDS_PER_PAGE, (page + 1) * WORDS_PER_PAGE);
-  const bw = compact ? 280 : 320;
-  const bh = compact ? 360 : 420;
+  const bw = bwProp ?? (compact ? 280 : 320);
+  const bh = bhProp ?? (compact ? 360 : 420);
+  const scale = bw / 280;
 
   const coverPatternStyle = cover.pattern === "gold-border"
     ? { boxShadow:`inset 0 0 0 6px ${cover.accent}40, inset 0 0 0 8px ${cover.accent}20, 0 8px 24px rgba(0,0,0,0.4)` }
@@ -172,12 +173,12 @@ export function BookView({ entries, cover, pageStyle, currentPage, setCurrentPag
               </div>
             )}
             {pageEntries.map((entry, wi) => {
-              const py = compact ? 3 : 4;
+              const py = Math.max(2, Math.round(3 * scale));
               const tileLetters = entry.letters || entry.word.split("").map(l => ({ letter: l, type: "normal" }));
-              const maxAvail = compact ? 168 : 208;
+              const maxAvail = bw - 112;
               const n = tileLetters.length;
               const fitted = Math.floor((maxAvail - (n - 1) * 2) / n);
-              const tileSize = Math.max(8, Math.min(compact ? 16 : 18, fitted));
+              const tileSize = Math.max(8, Math.min(Math.round(16 * scale), fitted));
               const isHovered = hoveredEntry?.index === wi;
               return (
                 <motion.div key={wi}
@@ -192,7 +193,7 @@ export function BookView({ entries, cover, pageStyle, currentPage, setCurrentPag
                     cursor: "default",
                   }}>
                   {isHovered && <ScoreTooltip tileLetters={tileLetters} rect={hoveredEntry.rect} />}
-                  <div style={{ display:"flex", gap:2, overflow:"hidden", flex:1, minWidth:0, height: compact ? 16 : 18, alignItems:"center" }}>
+                  <div style={{ display:"flex", gap:2, overflow:"hidden", flex:1, minWidth:0, height: Math.round(16 * scale), alignItems:"center" }}>
                     {tileLetters.map((lt, i) => (
                       <BookTile key={i} letter={lt.letter} type={lt.type} size={tileSize} />
                     ))}
@@ -211,7 +212,7 @@ export function BookView({ entries, cover, pageStyle, currentPage, setCurrentPag
             {Array.from({ length: WORDS_PER_PAGE - pageEntries.length }).map((_, i) => (
               <div key={`empty-${i}`} style={{
                 borderBottom:`1px dashed ${pageStyle.accent}08`,
-                height: compact ? 22 : 26,
+                height: Math.round(22 * scale),
               }}/>
             ))}
           </div>

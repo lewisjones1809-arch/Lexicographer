@@ -18,7 +18,7 @@ button, [role="button"] { touch-action: manipulation; }
 /* Content wrapper — max-width so the game doesn't look stretched on ultrawide screens */
 .lex-app-inner {
   width: 100%;
-  max-width: 1400px;
+  max-width: 1800px;
   display: flex;
   flex-direction: column;
   flex: 1;

@@ -25,6 +25,14 @@ export function LexiconTab({
   const [bookPage, setBookPage] = useState(0);
   const [lexiconPickerOpen, setLexiconPickerOpen] = useState(false);
   const [pendingLexiconTileId, setPendingLexiconTileId] = useState(null);
+  const [viewH, setViewH] = useState(window.innerHeight);
+  useEffect(() => {
+    const onResize = () => setViewH(window.innerHeight);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  const bookH = Math.max(300, Math.min(Math.floor(viewH * 0.6), 640));
+  const bookW = Math.round(bookH * (280 / 360));
 
   // Auto-remove monkey animations after their duration
   useEffect(() => {
@@ -119,7 +127,7 @@ export function LexiconTab({
           {monkeyCount > 0 && monkeyColumn([0,1,2,3,4])}
           {/* Book */}
           <div style={{ flexShrink:0 }}>
-            <BookView entries={lexicon} cover={activeCover} pageStyle={activePageStyle} currentPage={bookPage} setCurrentPage={setBookPage} compact volumeNumber={volumeNumber} onPublish={publishLexicon} />
+            <BookView entries={lexicon} cover={activeCover} pageStyle={activePageStyle} currentPage={bookPage} setCurrentPage={setBookPage} bw={bookW} bh={bookH} volumeNumber={volumeNumber} onPublish={publishLexicon} />
           </div>
           {/* Right inner column: slots 10-14 */}
           {monkeyCount > 10 && monkeyColumn([10,11,12,13,14])}
