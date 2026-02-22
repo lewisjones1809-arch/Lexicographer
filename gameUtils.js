@@ -324,3 +324,20 @@ export function calculateQuillsBreakdown(entries, coverMult, pageMult, A = 0.1, 
   const total = Math.floor(base * highMult * designMult);
   return { wordCount: newWordCount, wordBonus, totalLexicoins, lexicoinBonus, base, top10, top10Total, highMult, designMult, coverMult, pageMult, total, A, B };
 }
+
+// --- COMPENDIUM PUBLISH CALCULATION ---
+// Parallel to calculateQuillsBreakdown for puzzle compendium publishing.
+// Takes eligible (unpublished) completed puzzles instead of lexicon entries.
+const COMPENDIUM_DIFF_WEIGHTS = { compact: 1, standard: 2, cryptic: 4 };
+
+export function calculateCompendiumBreakdown(eligiblePuzzles, coverMult, pageMult, A = 0.1, B = 0.05) {
+  const puzzleCount = eligiblePuzzles.length;
+  const baseValue = eligiblePuzzles.reduce((s, p) => s + (COMPENDIUM_DIFF_WEIGHTS[p.difficulty] || 1), 0);
+  const puzzleBonus = A * baseValue;
+  const totalLexicoins = eligiblePuzzles.reduce((s, p) => s + (p.lexicoinsEarned || 0), 0);
+  const lexicoinBonus = Math.floor(B * totalLexicoins);
+  const base = puzzleBonus + lexicoinBonus;
+  const designMult = coverMult * pageMult;
+  const total = Math.floor(base * designMult);
+  return { puzzleCount, baseValue, puzzleBonus, totalLexicoins, lexicoinBonus, base, designMult, coverMult, pageMult, total, A, B };
+}

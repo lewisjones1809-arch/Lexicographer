@@ -32,7 +32,8 @@
       "Bash(timeout 10 npm run dev:*)",
       "Bash(curl:*)",
       "Bash(npx esbuild:*)",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "Bash(node puzzles/verify_grid.mjs:*)"
     ]
   }
 }

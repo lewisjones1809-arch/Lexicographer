@@ -52,6 +52,15 @@ try { db.exec('ALTER TABLE user_state ADD COLUMN volatile_state TEXT DEFAULT NUL
 try { db.exec("ALTER TABLE user_state ADD COLUMN achievement_progress TEXT DEFAULT '{}'"); } catch {}
 try { db.exec("ALTER TABLE user_state ADD COLUMN achievement_levels TEXT DEFAULT '{}'"); } catch {}
 
+// Puzzle persistence columns
+try { db.exec("ALTER TABLE user_state ADD COLUMN puzzles_unlocked INTEGER DEFAULT 0"); } catch {}
+try { db.exec("ALTER TABLE user_state ADD COLUMN puzzle_hints TEXT DEFAULT '{}'"); } catch {}
+try { db.exec("ALTER TABLE user_state ADD COLUMN active_puzzle TEXT DEFAULT NULL"); } catch {}
+try { db.exec("ALTER TABLE user_state ADD COLUMN completed_puzzles TEXT DEFAULT '[]'"); } catch {}
+try { db.exec("ALTER TABLE user_state ADD COLUMN solved_clues TEXT DEFAULT '[]'"); } catch {}
+try { db.exec("ALTER TABLE user_state ADD COLUMN puzzle_ink_counter INTEGER DEFAULT 0"); } catch {}
+try { db.exec("ALTER TABLE user_state ADD COLUMN compendium_published TEXT DEFAULT '[]'"); } catch {}
+
 // --- User helpers ---
 
 export function getUserByEmail(email) {
@@ -104,6 +113,13 @@ export function getUserState(userId) {
     inkBoostPending: row.ink_boost_pending,
     letterPackPending: JSON.parse(row.letter_pack_pending),
     volatileState: row.volatile_state ? JSON.parse(row.volatile_state) : null,
+    puzzlesUnlocked: !!row.puzzles_unlocked,
+    puzzleHints: row.puzzle_hints ? JSON.parse(row.puzzle_hints) : {},
+    activePuzzle: row.active_puzzle ? JSON.parse(row.active_puzzle) : null,
+    completedPuzzles: row.completed_puzzles ? JSON.parse(row.completed_puzzles) : [],
+    solvedClues: row.solved_clues ? JSON.parse(row.solved_clues) : [],
+    puzzleInkCounter: row.puzzle_ink_counter ?? 0,
+    compendiumPublished: row.compendium_published ? JSON.parse(row.compendium_published) : [],
   };
 }
 
@@ -122,7 +138,14 @@ export function saveUserState(userId, state) {
       achievement_levels = ?,
       ink_boost_pending = ?,
       letter_pack_pending = ?,
-      volatile_state = ?
+      volatile_state = ?,
+      puzzles_unlocked = ?,
+      puzzle_hints = ?,
+      active_puzzle = ?,
+      completed_puzzles = ?,
+      solved_clues = ?,
+      puzzle_ink_counter = ?,
+      compendium_published = ?
     WHERE user_id = ?
   `).run(
     state.quills ?? 0,
@@ -138,6 +161,13 @@ export function saveUserState(userId, state) {
     state.inkBoostPending ? 1 : 0,
     JSON.stringify(state.letterPackPending ?? []),
     state.volatileState !== undefined ? JSON.stringify(state.volatileState) : null,
+    state.puzzlesUnlocked ? 1 : 0,
+    JSON.stringify(state.puzzleHints ?? {}),
+    state.activePuzzle ? JSON.stringify(state.activePuzzle) : null,
+    JSON.stringify(state.completedPuzzles ?? []),
+    JSON.stringify(state.solvedClues ?? []),
+    state.puzzleInkCounter ?? 0,
+    JSON.stringify(state.compendiumPublished ?? []),
     userId
   );
 }

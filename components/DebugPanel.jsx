@@ -6,6 +6,8 @@ export function DebugPanel({
   collectedInk, setCollectedInk,
   letters, setLetters,
   setLexicon, setQuills, setWells, setSpecialTiles, setGoldenNotebooks,
+  puzzlesUnlocked, setPuzzlesUnlocked,
+  puzzleHints, setPuzzleHints,
   showMsg,
   scalingA, setScalingA, scalingB, setScalingB,
   onClose
@@ -95,6 +97,25 @@ export function DebugPanel({
         <div style={ds.row}>
           <button style={ds.btn} onClick={() => { setScalingA(2); setScalingB(0.5); showMsg("[DEBUG] Scaling reset to defaults"); }}>Reset Defaults</button>
           <span style={{ fontSize:10, color:"#555", fontFamily:"monospace" }}>formula: (A×words + B×lexicoins) × topMult × designMult</span>
+        </div>
+      </div>
+
+      {/* Puzzles */}
+      <div style={{ borderTop:"1px solid #333", marginTop:8, paddingTop:8 }}>
+        <div style={ds.row}>
+          <span style={ds.label}>Puzzles:</span>
+          <button style={{ ...ds.btn, background: puzzlesUnlocked ? "#0a2a0a" : "#222", color: puzzlesUnlocked ? "#0f0" : "#888" }}
+            onClick={() => { setPuzzlesUnlocked(p => !p); showMsg(`[DEBUG] Puzzles ${puzzlesUnlocked ? "locked" : "unlocked"}`); }}>
+            {puzzlesUnlocked ? "Unlocked ✓" : "Locked ✕"}
+          </button>
+        </div>
+        <div style={ds.row}>
+          <span style={ds.label}>Hints:</span>
+          {[["revealTile","Tile"],["revealWord","Word"],["letterConfirmation","Confirm"],["clueRewrite","Rewrite"]].map(([key,label])=>(
+            <button key={key} style={ds.btn} onClick={()=>{setPuzzleHints(p=>({...p,[key]:(p[key]||0)+5}));showMsg(`[DEBUG] +5 ${label}`);}}>
+              +5 {label} ({puzzleHints[key]||0})
+            </button>
+          ))}
         </div>
       </div>
 

@@ -76,6 +76,58 @@ body.book-flipping .lex-book-col {
   overflow: visible !important;
 }
 
+/* === GHOST TILE MIST ANIMATION === */
+@keyframes lex-ghost-mist {
+  0%   { background-position: 0% 0%, 100% 100%; opacity: 0.45; }
+  33%  { background-position: 40% 10%, 60% 90%;  opacity: 0.3;  }
+  66%  { background-position: 10% 50%, 90% 30%;  opacity: 0.5;  }
+  100% { background-position: 0% 0%, 100% 100%; opacity: 0.45; }
+}
+.lex-ghost-mist {
+  background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.55) 0%, transparent 55%),
+              radial-gradient(ellipse at 70% 80%, rgba(255,255,255,0.4) 0%, transparent 50%);
+  background-size: 200% 200%, 200% 200%;
+  animation: lex-ghost-mist 4s ease-in-out infinite;
+}
+
+/* === PUZZLE TILE INSCRIBE ANIMATIONS === */
+/* Correct: golden glow pulse that settles into the committed tile */
+@keyframes lex-tile-correct {
+  0%   { box-shadow: 0 0 0 0 rgba(180,160,80,0), inset 0 1px 0 rgba(255,255,255,0.65); transform: scale(1); }
+  20%  { box-shadow: 0 0 12px 4px rgba(180,160,80,0.6), inset 0 1px 0 rgba(255,255,255,0.8); transform: scale(1.08); }
+  50%  { box-shadow: 0 0 18px 6px rgba(200,180,60,0.4), inset 0 1px 0 rgba(255,255,255,0.7); transform: scale(1.03); }
+  100% { box-shadow: 0 2px 5px rgba(44,36,32,0.2), inset 0 1px 0 rgba(255,255,255,0.65); transform: scale(1); }
+}
+.lex-tile-correct {
+  animation: lex-tile-correct 0.6s ease-out forwards;
+}
+
+/* Incorrect: tile cracks, shakes, and shatters away */
+@keyframes lex-tile-crack {
+  0%   { transform: scale(1) rotate(0deg); opacity: 1; filter: none; }
+  15%  { transform: scale(1.05) rotate(-2deg); opacity: 1; filter: brightness(1.3) saturate(0.5); }
+  30%  { transform: scale(1.02) rotate(3deg); opacity: 1; filter: brightness(0.9) saturate(0.3); }
+  45%  { transform: scale(0.98) rotate(-1deg); opacity: 0.9; }
+  60%  { transform: scale(0.92) rotate(2deg); opacity: 0.6; filter: brightness(0.7) saturate(0.2); }
+  80%  { transform: scale(0.7) rotate(-4deg); opacity: 0.3; filter: brightness(0.5) saturate(0); }
+  100% { transform: scale(0.4) rotate(8deg); opacity: 0; filter: brightness(0.3) saturate(0); }
+}
+.lex-tile-crack {
+  animation: lex-tile-crack 0.55s ease-in forwards;
+  pointer-events: none;
+}
+
+/* Crack lines SVG overlay — appears during crack animation */
+@keyframes lex-crack-lines {
+  0%   { opacity: 0; }
+  15%  { opacity: 0.8; }
+  60%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+.lex-crack-lines {
+  animation: lex-crack-lines 0.55s ease-in forwards;
+}
+
 /* === RESPONSIVE TWEAKS === */
 @media (max-width: 480px) {
   .lex-tab-btn { font-size: 10px !important; padding: 10px 2px !important; }

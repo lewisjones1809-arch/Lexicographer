@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DropletIcon as Droplet, CaseUpperIcon as CaseUpper, FeatherIcon as Feather, BookMarkedIcon as BookMarked, ApertureIcon as Aperture } from "./assets/icons";
-import { Settings } from "lucide-react";
+import { Settings, Lock } from "lucide-react";
 import { WORD_LIST } from "./wordList.js";
 import { UPGRADES_BY_NAME } from "./upgrades.js";
 import {
-  TABS, COVERS, PAGE_STYLES,
+  TABS, COVERS, PAGE_STYLES, LETTER_SCORES,
   BASE_INK_COST, INK_COST_SCALE, LETTER_INTERVAL, MAX_LETTERS,
   MAX_WELLS, MAX_PRESSES,
   WELL_COSTS, PRESS_COSTS, WELL_MGR_COSTS, PRESS_MGR_COSTS,
@@ -36,6 +36,8 @@ import { GameCanvas } from "./components/GameCanvas.jsx";
 import { AuthModal } from "./components/AuthModal.jsx";
 import { AccountModal } from "./components/AccountModal.jsx";
 import { StatsModal } from "./components/StatsModal.jsx";
+import { PuzzlesTab } from "./components/PuzzlesTab.jsx";
+import { PUZZLES, CLUE_DB, DIFFICULTY_CONFIG } from "./puzzles/puzzleData.js";
 
 export default function Lexicographer() {
   const isTutorial = localStorage.getItem('lexTutorialDone') !== 'true';
@@ -94,6 +96,15 @@ export default function Lexicographer() {
 
   // Permanent upgrades (persist across publish rounds) — { upgradeId: currentLevel }
   const [permUpgradeLevels, setPermUpgradeLevels] = useState({});
+
+  // Puzzle state (all persistent across publish rounds)
+  const [puzzlesUnlocked, setPuzzlesUnlocked] = useState(false);
+  const [puzzleHints, setPuzzleHints] = useState({ revealTile: 0, revealWord: 0, letterConfirmation: 0, clueRewrite: 0 });
+  const [activePuzzle, setActivePuzzle] = useState(null);
+  const [completedPuzzles, setCompletedPuzzles] = useState([]);
+  const [solvedClues, setSolvedClues] = useState(() => new Set());
+  const [puzzleInkCounter, setPuzzleInkCounter] = useState(0);
+  const [compendiumPublished, setCompendiumPublished] = useState([]);
 
   // Monkey with a Typewriter — timers and animation queue (persist across publish rounds)
   const [monkeyTimers, setMonkeyTimers] = useState([]);
@@ -176,7 +187,7 @@ export default function Lexicographer() {
   const claimableCount  = useMemo(() => countClaimable(achievementProgress, achievementLevels), [achievementProgress, achievementLevels]);
   const wordString      = useMemo(() => wordTiles.map(t => t.letter).join(""), [wordTiles]);
   const totalLetters    = useMemo(() => Object.values(letters).reduce((a,b)=>a+b,0) + specialTiles.length, [letters, specialTiles]);
-  const inkCost         = useMemo(() => BASE_INK_COST + lexicon.length * INK_COST_SCALE, [lexicon.length]);
+  const inkCost         = useMemo(() => { const n = lexicon.length; return BASE_INK_COST + INK_COST_SCALE / 2 * n * (n + 1); }, [lexicon.length]);
 
   const isValidWord = useCallback((w) => WORD_LIST.has(w.toUpperCase()), []);
   // eslint-disable-next-line no-unused-vars
@@ -278,11 +289,22 @@ export default function Lexicographer() {
         const level = achievement.levels[claimedCount];
         if (progress < level.threshold) return prevProgress;
         setGoldenNotebooks(n => n + level.reward);
+        // Unlock puzzles when claiming "Growing Portfolio" (lexicons_published level index 1)
+        if (id === "lexicons_published" && claimedCount === 1) {
+          setPuzzlesUnlocked(true);
+        }
         return { ...prevProgress, golden_notebooks_earned: (prevProgress.golden_notebooks_earned ?? 0) + level.reward };
       });
       return { ...prevLevels, [id]: claimedCount + 1 };
     });
   }, []);
+
+  // Migration: unlock puzzles for returning users who already claimed level 1+
+  useEffect(() => {
+    if (!puzzlesUnlocked && (achievementLevels["lexicons_published"] ?? 0) >= 2) {
+      setPuzzlesUnlocked(true);
+    }
+  }, [achievementLevels, puzzlesUnlocked]);
 
   const completeTutorial = useCallback(() => {
     localStorage.setItem('lexTutorialDone', 'true');
@@ -310,6 +332,14 @@ export default function Lexicographer() {
     setPermUpgradeLevels(state.permUpgradeLevels ?? {});
     setAchievementProgress(state.achievementProgress ?? {});
     setAchievementLevels(state.achievementLevels ?? {});
+    // Puzzle state restoration
+    setPuzzlesUnlocked(state.puzzlesUnlocked ?? false);
+    setPuzzleHints(state.puzzleHints ?? { revealTile: 0, revealWord: 0, letterConfirmation: 0, clueRewrite: 0 });
+    setActivePuzzle(state.activePuzzle ?? null);
+    setCompletedPuzzles(state.completedPuzzles ?? []);
+    setSolvedClues(new Set(state.solvedClues ?? []));
+    setPuzzleInkCounter(state.puzzleInkCounter ?? 0);
+    setCompendiumPublished(state.compendiumPublished ?? []);
     const vs = state.volatileState;
 
     // Compute offline gains using server-restored volatile state + elapsed from mount ref.
@@ -386,6 +416,13 @@ export default function Lexicographer() {
       quills, goldenNotebooks, publishedLexicons, ownedCovers, ownedPages,
       activeCoverId, activePageId, permUpgradeLevels,
       achievementProgress, achievementLevels,
+      puzzlesUnlocked,
+      puzzleHints,
+      activePuzzle: activePuzzle ? { ...activePuzzle, rewrittenClues: [...(activePuzzle.rewrittenClues || [])] } : null,
+      completedPuzzles,
+      solvedClues: [...solvedClues],
+      puzzleInkCounter,
+      compendiumPublished,
       volatileState: {
         collectedInk, letters, wordTiles, lexicon,
         wellCount, wells, wellMgrOwned, wellMgrEnabled,
@@ -396,6 +433,8 @@ export default function Lexicographer() {
     };
   }, [quills, goldenNotebooks, publishedLexicons, ownedCovers, ownedPages,
       activeCoverId, activePageId, permUpgradeLevels, achievementProgress, achievementLevels,
+      puzzlesUnlocked, puzzleHints, activePuzzle, completedPuzzles, solvedClues,
+      puzzleInkCounter, compendiumPublished,
       collectedInk, letters, wordTiles, lexicon, wellCount, wells, wellMgrOwned, wellMgrEnabled,
       pressCount, presses, pressMgrOwned, specialTiles,
       wellUpgradeLevels, mgrUpgradeLevels, pressUpgradeLevels, monkeyTimers]);
@@ -484,6 +523,8 @@ export default function Lexicographer() {
     return () => clearTimeout(syncTimerRef.current);
   }, [quills, goldenNotebooks, publishedLexicons, ownedCovers, ownedPages,
       activeCoverId, activePageId, permUpgradeLevels, achievementProgress, achievementLevels,
+      puzzlesUnlocked, puzzleHints, activePuzzle, completedPuzzles, solvedClues,
+      puzzleInkCounter, compendiumPublished,
       currentUser, doSync]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogin = useCallback(async (user, token) => {
@@ -968,6 +1009,411 @@ export default function Lexicographer() {
     else{setOwnedPages(p=>[...p,item.id]);setActivePageId(item.id);showMsg(`Unlocked "${item.name}"!`);}
   };
 
+  // --- PUZZLE HANDLERS ---
+
+  const buildPuzzleGrid = useCallback((puzzle) => {
+    const grid = [];
+    for (let r = 0; r < puzzle.rows; r++) {
+      const row = [];
+      for (let c = 0; c < puzzle.cols; c++) {
+        const letter = puzzle.solution[r][c];
+        row.push({
+          row: r, col: c,
+          letter,
+          placed: null,
+          provisional: null,
+          provisionalTileId: null,
+          draft: null,
+          hintPlaced: false,
+          isBlack: letter === null,
+          acrossClueId: null,
+          downClueId: null,
+        });
+      }
+      grid.push(row);
+    }
+    // Link cells to clue IDs
+    for (const clue of puzzle.clues.across) {
+      for (let i = 0; i < clue.length; i++) {
+        grid[clue.row][clue.col + i].acrossClueId = clue.id;
+      }
+    }
+    for (const clue of puzzle.clues.down) {
+      for (let i = 0; i < clue.length; i++) {
+        grid[clue.row + i][clue.col].downClueId = clue.id;
+      }
+    }
+    return grid;
+  }, []);
+
+  const onSelectPuzzle = useCallback((puzzleId) => {
+    const puzzle = PUZZLES.find(p => p.id === puzzleId);
+    if (!puzzle) return;
+    const grid = buildPuzzleGrid(puzzle);
+    setActivePuzzle({
+      puzzleId,
+      difficulty: puzzle.difficulty,
+      rows: puzzle.rows,
+      cols: puzzle.cols,
+      grid,
+      clues: puzzle.clues,
+      selectedClueId: null,
+      selectedDirection: "across",
+      lexicoinsEarned: 0,
+      hintsUsed: 0,
+      cleanSolves: 0,
+      rewrittenClues: [],
+    });
+  }, [buildPuzzleGrid]);
+
+  const onSelectClue = useCallback((clueId, direction) => {
+    setActivePuzzle(prev => {
+      if (!prev) return prev;
+      return { ...prev, selectedClueId: clueId, selectedDirection: direction };
+    });
+  }, []);
+
+  const onPlaceLetter = useCallback((clueId, position, tileId, letter) => {
+    setActivePuzzle(prev => {
+      if (!prev) return prev;
+      const allClues = [...prev.clues.across, ...prev.clues.down];
+      const clue = allClues.find(c => c.id === clueId);
+      if (!clue) return prev;
+      const isAcross = prev.clues.across.includes(clue);
+      const r = isAcross ? clue.row : clue.row + position;
+      const c = isAcross ? clue.col + position : clue.col;
+      const grid = prev.grid.map(row => row.map(cell => ({ ...cell })));
+      const cell = grid[r][c];
+      if (cell.isBlack || cell.placed) return prev;
+      cell.provisional = letter;
+      cell.provisionalTileId = tileId;
+      cell.draft = null; // clear any draft underneath
+      return { ...prev, grid };
+    });
+  }, []);
+
+  const onRemoveLetter = useCallback((clueId, position) => {
+    setActivePuzzle(prev => {
+      if (!prev) return prev;
+      const allClues = [...prev.clues.across, ...prev.clues.down];
+      const clue = allClues.find(c => c.id === clueId);
+      if (!clue) return prev;
+      const isAcross = prev.clues.across.includes(clue);
+      const r = isAcross ? clue.row : clue.row + position;
+      const c = isAcross ? clue.col + position : clue.col;
+      const grid = prev.grid.map(row => row.map(cell => ({ ...cell })));
+      const cell = grid[r][c];
+      if (cell.isBlack || cell.placed) return prev;
+      cell.provisional = null;
+      cell.provisionalTileId = null;
+      return { ...prev, grid };
+    });
+  }, []);
+
+  const onPlaceDraft = useCallback((clueId, position, letter) => {
+    setActivePuzzle(prev => {
+      if (!prev) return prev;
+      const allClues = [...prev.clues.across, ...prev.clues.down];
+      const clue = allClues.find(c => c.id === clueId);
+      if (!clue) return prev;
+      const isAcross = prev.clues.across.includes(clue);
+      const r = isAcross ? clue.row : clue.row + position;
+      const c = isAcross ? clue.col + position : clue.col;
+      const grid = prev.grid.map(row => row.map(cell => ({ ...cell })));
+      const cell = grid[r][c];
+      if (cell.isBlack || cell.placed) return prev;
+      cell.draft = letter;
+      return { ...prev, grid };
+    });
+  }, []);
+
+  const onRemoveDraft = useCallback((clueId, position) => {
+    setActivePuzzle(prev => {
+      if (!prev) return prev;
+      const allClues = [...prev.clues.across, ...prev.clues.down];
+      const clue = allClues.find(c => c.id === clueId);
+      if (!clue) return prev;
+      const isAcross = prev.clues.across.includes(clue);
+      const r = isAcross ? clue.row : clue.row + position;
+      const c = isAcross ? clue.col + position : clue.col;
+      const grid = prev.grid.map(row => row.map(cell => ({ ...cell })));
+      grid[r][c].draft = null;
+      return { ...prev, grid };
+    });
+  }, []);
+
+  const onInscribeWord = useCallback((clueId) => {
+    if (!activePuzzle) return null;
+    const allClues = [...activePuzzle.clues.across, ...activePuzzle.clues.down];
+    const clue = allClues.find(c => c.id === clueId);
+    if (!clue) return null;
+    const isAcross = activePuzzle.clues.across.includes(clue);
+
+    // Gather cells for this word
+    const cells = [];
+    for (let i = 0; i < clue.length; i++) {
+      const r = isAcross ? clue.row : clue.row + i;
+      const c = isAcross ? clue.col + i : clue.col;
+      cells.push(activePuzzle.grid[r][c]);
+    }
+
+    // Require every cell to have a provisional letter or already be committed
+    if (!cells.every(cell => cell.placed || cell.provisional)) return null;
+
+    // Don't allow re-inscribing a fully committed word
+    if (cells.every(cell => cell.placed)) return null;
+
+    // Ink cost
+    const n = puzzleInkCounter;
+    const cost = BASE_INK_COST + (INK_COST_SCALE / 2) * n * (n + 1);
+    if (collectedInk < cost) return null;
+
+    // Commit — build new grid, track consumed tiles
+    const newGrid = activePuzzle.grid.map(row => row.map(cell => ({ ...cell })));
+    let anyIncorrect = false;
+    const consumedNormalLetters = {};
+    const consumedSpecialIds = new Set();
+    // Per-cell results for animation feedback
+    const cellResults = []; // { row, col, result: "correct"|"incorrect"|"already" }
+
+    for (let i = 0; i < clue.length; i++) {
+      const r = isAcross ? clue.row : clue.row + i;
+      const c = isAcross ? clue.col + i : clue.col;
+      const cell = newGrid[r][c];
+      if (cell.placed) { cellResults.push({ row: r, col: c, result: "already" }); continue; }
+
+      const provisional = cell.provisional;
+      const tileId = cell.provisionalTileId;
+
+      // Consume the tile from inventory
+      const specTile = tileId ? specialTiles.find(t => t.id === tileId) : null;
+      if (specTile) {
+        consumedSpecialIds.add(tileId);
+      } else {
+        consumedNormalLetters[provisional] = (consumedNormalLetters[provisional] || 0) + 1;
+      }
+
+      if (provisional === cell.letter) {
+        // Correct
+        cell.placed = provisional;
+        cell.provisional = null;
+        cell.provisionalTileId = null;
+        cellResults.push({ row: r, col: c, result: "correct" });
+      } else {
+        // Incorrect — letter is lost, cell cleared
+        anyIncorrect = true;
+        cell.provisional = null;
+        cell.provisionalTileId = null;
+        cellResults.push({ row: r, col: c, result: "incorrect", lostLetter: provisional });
+      }
+    }
+
+    // Deduct ink
+    setCollectedInk(p => p - cost);
+    setPuzzleInkCounter(p => p + 1);
+
+    // Remove consumed tiles from inventory
+    if (Object.keys(consumedNormalLetters).length > 0) {
+      setLetters(prev => {
+        const next = { ...prev };
+        for (const [ch, count] of Object.entries(consumedNormalLetters)) {
+          next[ch] = Math.max(0, (next[ch] || 0) - count);
+          if (next[ch] === 0) delete next[ch];
+        }
+        return next;
+      });
+    }
+    if (consumedSpecialIds.size > 0) {
+      setSpecialTiles(prev => prev.filter(t => !consumedSpecialIds.has(t.id)));
+    }
+
+    // Check if entire word is now solved
+    let wordLexicoins = 0;
+    const wordCells = [];
+    for (let i = 0; i < clue.length; i++) {
+      const r = isAcross ? clue.row : clue.row + i;
+      const c = isAcross ? clue.col + i : clue.col;
+      wordCells.push(newGrid[r][c]);
+    }
+
+    const wordComplete = wordCells.every(cell => cell.placed === cell.letter);
+    let cleanSolveInc = 0;
+
+    if (wordComplete) {
+      // Score the word — build assignments like scoreWordWithTiles expects
+      const assignments = wordCells.filter(cell => !cell.hintPlaced).map(cell => ({
+        letter: cell.letter,
+        type: cell.tileType || "normal",
+        score: LETTER_SCORES[cell.letter] || 0,
+      }));
+      const { total } = scoreWordWithTiles(assignments);
+      const diffMult = DIFFICULTY_CONFIG[activePuzzle.difficulty]?.lexicoinMult || 1;
+      const cleanBonus = !anyIncorrect ? 1.5 : 1;
+      wordLexicoins = Math.round(total * diffMult * cleanBonus);
+      if (!anyIncorrect) cleanSolveInc = 1;
+
+      // Add clue to solvedClues
+      setSolvedClues(prev => {
+        const next = new Set(prev);
+        next.add(clueId);
+        return next;
+      });
+    }
+
+    setActivePuzzle(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        grid: newGrid,
+        lexicoinsEarned: prev.lexicoinsEarned + wordLexicoins,
+        hintsUsed: prev.hintsUsed,
+        cleanSolves: prev.cleanSolves + cleanSolveInc,
+      };
+    });
+
+    return { cellResults, wordLexicoins };
+  }, [activePuzzle, puzzleInkCounter, collectedInk, specialTiles]);
+
+  const onUseHint = useCallback((hintType, clueId, position) => {
+    if (!activePuzzle) return;
+    if ((puzzleHints[hintType] || 0) <= 0) return;
+
+    const allClues = [...activePuzzle.clues.across, ...activePuzzle.clues.down];
+    const clue = allClues.find(c => c.id === clueId);
+    if (!clue) return;
+    const isAcross = activePuzzle.clues.across.includes(clue);
+
+    if (hintType === "revealTile") {
+      // Find first empty cell (or use position if specified)
+      let targetPos = position;
+      if (targetPos == null) {
+        for (let i = 0; i < clue.length; i++) {
+          const r = isAcross ? clue.row : clue.row + i;
+          const c = isAcross ? clue.col + i : clue.col;
+          const cell = activePuzzle.grid[r][c];
+          if (!cell.placed) { targetPos = i; break; }
+        }
+      }
+      if (targetPos == null) return;
+      const r = isAcross ? clue.row : clue.row + targetPos;
+      const c = isAcross ? clue.col + targetPos : clue.col;
+
+      setPuzzleHints(prev => ({ ...prev, revealTile: prev.revealTile - 1 }));
+      setActivePuzzle(prev => {
+        if (!prev) return prev;
+        const grid = prev.grid.map(row => row.map(cell => ({ ...cell })));
+        const cell = grid[r][c];
+        cell.placed = cell.letter;
+        cell.provisional = null;
+        cell.provisionalTileId = null;
+        cell.draft = null;
+        cell.hintPlaced = true;
+        return { ...prev, grid, hintsUsed: prev.hintsUsed + 1 };
+      });
+    } else if (hintType === "revealWord") {
+      setPuzzleHints(prev => ({ ...prev, revealWord: prev.revealWord - 1 }));
+      setActivePuzzle(prev => {
+        if (!prev) return prev;
+        const grid = prev.grid.map(row => row.map(cell => ({ ...cell })));
+        for (let i = 0; i < clue.length; i++) {
+          const r = isAcross ? clue.row : clue.row + i;
+          const c = isAcross ? clue.col + i : clue.col;
+          const cell = grid[r][c];
+          if (!cell.placed) {
+            cell.placed = cell.letter;
+            cell.provisional = null;
+            cell.provisionalTileId = null;
+            cell.draft = null;
+            cell.hintPlaced = true;
+          }
+        }
+        return { ...prev, grid, hintsUsed: prev.hintsUsed + 1 };
+      });
+      setSolvedClues(prev => { const next = new Set(prev); next.add(clueId); return next; });
+    } else if (hintType === "letterConfirmation") {
+      setPuzzleHints(prev => ({ ...prev, letterConfirmation: prev.letterConfirmation - 1 }));
+      // Return confirmation result — component handles the flash
+      // We still decrement the count; UI reads the grid state to show confirmation
+      setActivePuzzle(prev => prev ? { ...prev, hintsUsed: prev.hintsUsed + 1 } : prev);
+    } else if (hintType === "clueRewrite") {
+      setPuzzleHints(prev => ({ ...prev, clueRewrite: prev.clueRewrite - 1 }));
+      setActivePuzzle(prev => {
+        if (!prev) return prev;
+        const rewritten = [...(prev.rewrittenClues || [])];
+        if (!rewritten.includes(clueId)) rewritten.push(clueId);
+        return { ...prev, rewrittenClues: rewritten, hintsUsed: prev.hintsUsed + 1 };
+      });
+    }
+  }, [activePuzzle, puzzleHints]);
+
+  const onAbandonPuzzle = useCallback(() => {
+    setActivePuzzle(null);
+  }, []);
+
+  const onCompletePuzzle = useCallback(() => {
+    if (!activePuzzle) return;
+    setCompletedPuzzles(prev => {
+      if (prev.some(p => p.puzzleId === activePuzzle.puzzleId)) return prev;
+      // Gather words from the puzzle
+      const puzzle = PUZZLES.find(p => p.id === activePuzzle.puzzleId);
+      const words = [];
+      if (puzzle) {
+        for (const clue of [...puzzle.clues.across, ...puzzle.clues.down]) {
+          const db = CLUE_DB[clue.clueId];
+          if (db) words.push(db.answer);
+        }
+      }
+      return [...prev, {
+        puzzleId: activePuzzle.puzzleId,
+        difficulty: activePuzzle.difficulty,
+        lexicoinsEarned: activePuzzle.lexicoinsEarned,
+        hintsUsed: activePuzzle.hintsUsed,
+        cleanSolves: activePuzzle.cleanSolves,
+        words: [...new Set(words)],
+        date: new Date().toLocaleDateString(),
+      }];
+    });
+    setActivePuzzle(null);
+  }, [activePuzzle]);
+
+  const onPublishCompendium = useCallback(({ breakdown, sealTier, sealRatio, acceptanceLetter }) => {
+    // Gather words from eligible puzzles for backward-compatible display
+    const eligible = completedPuzzles.filter(p => !p.includedInCompendium);
+    const words = [...new Set(eligible.flatMap(p => p.words || []))];
+
+    // Mark eligible puzzles as included
+    setCompletedPuzzles(prev => prev.map(p =>
+      p.includedInCompendium ? p : { ...p, includedInCompendium: true }
+    ));
+
+    // Award quills
+    setQuills(p => p + breakdown.total);
+
+    // Create compendium record
+    const volumeNumber = compendiumPublished.length + 1;
+    setCompendiumPublished(prev => [...prev, {
+      id: Date.now(),
+      words,
+      quillsEarned: breakdown.total,
+      date: new Date().toLocaleDateString(),
+      coverId: activeCoverId,
+      pageId: activePageId,
+      sealTier,
+      sealRatio,
+      acceptanceLetter,
+      puzzleCount: breakdown.puzzleCount,
+      totalLexicoins: breakdown.totalLexicoins,
+    }]);
+
+    return volumeNumber;
+  }, [completedPuzzles, compendiumPublished, activeCoverId, activePageId]);
+
+  const buyHints = useCallback((hintType, count, cost) => {
+    if (goldenNotebooks < cost) return;
+    setGoldenNotebooks(p => p - cost);
+    setPuzzleHints(prev => ({ ...prev, [hintType]: (prev[hintType] || 0) + count }));
+  }, [goldenNotebooks]);
+
   const addWordTile = (l, tileType = "normal", insertAt = null) => {
     const doInsert = (p, tile) => {
       if (insertAt === null || insertAt >= p.length) return [...p, tile];
@@ -1066,20 +1512,26 @@ export default function Lexicographer() {
 
       <div style={{ display:"flex", margin:"0 16px", borderBottom:`1px solid ${P.border}`, position:"relative", zIndex:1 }}>
         {TABS.map(tab => {
+          const isLocked = tab.id === "puzzles" && !puzzlesUnlocked;
           const isHinted = tutorialActive && TUTORIAL_TAB_HINTS[tutorialStep] === tab.id && activeTab !== tab.id;
           return (
-            <motion.button key={tab.id} onClick={() => setActiveTab(tab.id)} className="lex-tab-btn"
+            <motion.button key={tab.id} onClick={() => !isLocked && setActiveTab(tab.id)} className="lex-tab-btn"
               animate={isHinted ? { opacity: [1, 0.35, 1] } : { opacity: 1 }}
               transition={isHinted ? { duration: 1.4, repeat: Infinity, ease: "easeInOut" } : {}}
               style={{
                 flex:1, padding:"8px 4px", background:"none", border:"none",
                 borderBottom: activeTab===tab.id ? `2px solid ${P.ink}` : "2px solid transparent",
-                color: activeTab===tab.id ? P.textPrimary : isHinted ? P.ink : P.textMuted,
-                cursor:"pointer",
+                color: isLocked ? P.textMuted : activeTab===tab.id ? P.textPrimary : isHinted ? P.ink : P.textMuted,
+                cursor: isLocked ? "not-allowed" : "pointer",
+                opacity: isLocked ? 0.4 : 1,
                 fontFamily:"'BLKCHCRY',serif", fontSize:Math.round(14 * headerScale),
                 fontWeight: activeTab===tab.id ? 700 : isHinted ? 700 : 400,
                 transition:"all 0.2s",
-              }}>{tab.label}</motion.button>
+                display:"flex", alignItems:"center", justifyContent:"center", gap:2,
+              }}>
+              {isLocked && <Lock size={Math.round(10 * headerScale)} />}
+              {tab.label}
+            </motion.button>
           );
         })}
       </div>
@@ -1091,6 +1543,8 @@ export default function Lexicographer() {
           letters={letters} setLetters={setLetters}
           setLexicon={setLexicon} setQuills={setQuills} setWells={setWells}
           setSpecialTiles={setSpecialTiles} setGoldenNotebooks={setGoldenNotebooks}
+          puzzlesUnlocked={puzzlesUnlocked} setPuzzlesUnlocked={setPuzzlesUnlocked}
+          puzzleHints={puzzleHints} setPuzzleHints={setPuzzleHints}
           showMsg={showMsg}
           scalingA={scalingA} setScalingA={setScalingA}
           scalingB={scalingB} setScalingB={setScalingB}
@@ -1139,6 +1593,32 @@ export default function Lexicographer() {
           uiScale={uiScale}
         />}
 
+        {activeTab==="puzzles" && puzzlesUnlocked && <PuzzlesTab
+          activePuzzle={activePuzzle}
+          completedPuzzles={completedPuzzles}
+          solvedClues={solvedClues}
+          puzzleHints={puzzleHints}
+          puzzleInkCounter={puzzleInkCounter}
+          collectedInk={collectedInk}
+          letters={letters}
+          specialTiles={specialTiles}
+          compendiumPublished={compendiumPublished}
+          coverMult={coverMult} pageMult={pageMult}
+          scalingA={scalingA} scalingB={scalingB}
+          uiScale={uiScale} viewW={viewW} viewH={viewH}
+          onSelectPuzzle={onSelectPuzzle}
+          onSelectClue={onSelectClue}
+          onPlaceLetter={onPlaceLetter}
+          onRemoveLetter={onRemoveLetter}
+          onPlaceDraft={onPlaceDraft}
+          onRemoveDraft={onRemoveDraft}
+          onInscribeWord={onInscribeWord}
+          onUseHint={onUseHint}
+          onCompletePuzzle={onCompletePuzzle}
+          onPublishCompendium={onPublishCompendium}
+          onAbandonPuzzle={onAbandonPuzzle}
+        />}
+
         {activeTab==="shop" && <ShopTab
           quills={quills} goldenNotebooks={goldenNotebooks}
           ownedCovers={ownedCovers} ownedPages={ownedPages}
@@ -1147,6 +1627,7 @@ export default function Lexicographer() {
           buyItem={buyItem} showMsg={showMsg}
           permUpgradeLevels={permUpgradeLevels} buyPermUpgrade={buyPermUpgrade}
           unlockedQtys={unlockedQtys}
+          puzzlesUnlocked={puzzlesUnlocked} puzzleHints={puzzleHints} buyHints={buyHints}
           currentUser={currentUser} onShowAuth={() => setShowAuthModal(true)}
           onBuyIap={handleBuyIap} onLogout={handleLogout}
           uiScale={uiScale}
@@ -1154,6 +1635,7 @@ export default function Lexicographer() {
 
         {activeTab==="published" && <LibraryTab
           publishedLexicons={publishedLexicons} quills={quills} goldenNotebooks={goldenNotebooks}
+          compendiumPublished={compendiumPublished}
           uiScale={uiScale}
         />}
       </div>

@@ -13,6 +13,8 @@ const PRODUCTS = {
   ink_boost:         { name: 'Ink Surge',               amount: 99,   currency: 'gbp' },
   letter_pack:       { name: 'Letter Loot',             amount: 199,  currency: 'gbp' },
   premium_cosmetics: { name: 'Illuminated Manuscript',  amount: 299,  currency: 'gbp' },
+  hint_pack_small:   { name: 'Hint Sampler',            amount: 99,   currency: 'gbp' },
+  hint_pack_large:   { name: 'Hint Trove',              amount: 249,  currency: 'gbp' },
 };
 
 const SPECIAL_TILE_TYPES = ['DL', 'TL', 'DW', 'TW', '★', '◈'];
@@ -43,6 +45,20 @@ function applyProductToState(state, productId) {
     case 'premium_cosmetics':
       if (!s.ownedCovers.includes('obsidian')) s.ownedCovers = [...s.ownedCovers, 'obsidian'];
       if (!s.ownedPages.includes('gilded_folio')) s.ownedPages = [...s.ownedPages, 'gilded_folio'];
+      break;
+    case 'hint_pack_small':
+      s.puzzleHints = s.puzzleHints || {};
+      s.puzzleHints.revealTile = (s.puzzleHints.revealTile || 0) + 2;
+      s.puzzleHints.revealWord = (s.puzzleHints.revealWord || 0) + 1;
+      s.puzzleHints.letterConfirmation = (s.puzzleHints.letterConfirmation || 0) + 3;
+      s.puzzleHints.clueRewrite = (s.puzzleHints.clueRewrite || 0) + 2;
+      break;
+    case 'hint_pack_large':
+      s.puzzleHints = s.puzzleHints || {};
+      s.puzzleHints.revealTile = (s.puzzleHints.revealTile || 0) + 6;
+      s.puzzleHints.revealWord = (s.puzzleHints.revealWord || 0) + 3;
+      s.puzzleHints.letterConfirmation = (s.puzzleHints.letterConfirmation || 0) + 9;
+      s.puzzleHints.clueRewrite = (s.puzzleHints.clueRewrite || 0) + 6;
       break;
   }
   return s;

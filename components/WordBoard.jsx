@@ -5,7 +5,7 @@ import { TILE_TYPES, LETTER_SCORES } from "../constants.js";
 import { P } from "../styles.js";
 
 // --- LETTER TILE ---
-export function LetterTile({ letter, count, onClick, size=40, dimmed=false, tileType="normal", draggable=false, onDragStart }) {
+export function LetterTile({ letter, count, onClick, size=40, dimmed=false, ghost=false, tileType="normal", draggable=false, onDragStart }) {
   const tt = TILE_TYPES[tileType] || TILE_TYPES.normal;
   const isNormal   = tileType === "normal";
   const isSpecial  = tileType !== "normal";
@@ -32,9 +32,17 @@ export function LetterTile({ letter, count, onClick, size=40, dimmed=false, tile
         boxShadow: dimmed ? "none" : (isNormal
           ? "0 2px 5px rgba(44,36,32,0.2), inset 0 1px 0 rgba(255,255,255,0.65)"
           : "0 1px 4px rgba(44,36,32,0.10)"),
-        transition:"all 0.12s", opacity:dimmed?0.5:1,
+        transition:"all 0.12s", opacity: ghost ? 0.55 : (dimmed ? 0.5 : 1),
+        ...(ghost ? { filter: "saturate(0.4) brightness(1.1)" } : {}),
       }}>
       {isLexicoin ? <Aperture size={Math.round(size * 0.45)} /> : letter}
+
+      {/* Animated ghost wispy overlay */}
+      {ghost && <div className="lex-ghost-mist" style={{
+        position: "absolute", inset: 0,
+        borderRadius: "inherit",
+        pointerEvents: "none",
+      }} />}
 
       {/* Inventory count — top-right bubble */}
       {count > 0 && <span style={{

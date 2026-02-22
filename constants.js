@@ -6,8 +6,8 @@ export const LETTER_SCORES = {E:1,T:1,A:1,O:1,I:1,N:1,S:1,H:1,R:1,D:2,L:2,C:3,U:
 export const INK_WELL_MAX   = 100;  // L=0 baseline — used in debug panel fill
 export const LETTER_INTERVAL = 10;  // L=0 baseline — used for initial/reset state
 export const MAX_LETTERS    = 50;
-export const BASE_INK_COST  = 15;
-export const INK_COST_SCALE = 9;
+export const BASE_INK_COST  = 50;
+export const INK_COST_SCALE = 50;
 export const WORDS_PER_PAGE = 10;
 export const MAX_WELLS      = 5;
 export const MAX_PRESSES    = 5;
@@ -70,6 +70,7 @@ export const TABS = [
   { id:"lexicon",   label:"Lexicon"    },
   { id:"inkwell",   label:"Ink Well"   },
   { id:"press",     label:"Press"      },
+  { id:"puzzles",   label:"Puzzles"    },
   { id:"shop",      label:"Shop"       },
   { id:"published", label:"My Library" },
 ];
@@ -104,4 +105,6 @@ export const IAP_PRODUCTS = [
   { id:"ink_boost",         name:"Ink Surge",              desc:"Instantly fills all your ink wells to maximum",   price:"£0.99",  emoji:"💧", stripePriceId:"" },
   { id:"letter_pack",       name:"Letter Loot",            desc:"10 random rare special tiles added to inventory", price:"£1.99",  emoji:"🎲", stripePriceId:"" },
   { id:"premium_cosmetics", name:"Illuminated Manuscript", desc:"Unlock Obsidian Codex cover (×1.30) and Gilded Folio pages (×1.15)", price:"£2.99", emoji:"✨", stripePriceId:"" },
+  { id:"hint_pack_small",   name:"Hint Sampler",           desc:"2 Reveal Tile, 1 Reveal Word, 3 Letter Confirmation, 2 Clue Rewrite", price:"£0.99", emoji:"💡", stripePriceId:"" },
+  { id:"hint_pack_large",   name:"Hint Trove",             desc:"6 Reveal Tile, 3 Reveal Word, 9 Letter Confirmation, 6 Clue Rewrite", price:"£2.49", emoji:"🔮", stripePriceId:"" },
 ];

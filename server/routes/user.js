@@ -15,12 +15,16 @@ router.get('/state', requireAuth, (req, res) => {
 router.put('/state', requireAuth, (req, res) => {
   const { quills, goldenNotebooks, publishedLexicons, ownedCovers, ownedPages,
           activeCoverId, activePageId, permUpgradeLevels,
-          achievementProgress, achievementLevels, volatileState } = req.body;
+          achievementProgress, achievementLevels, volatileState,
+          puzzlesUnlocked, puzzleHints, activePuzzle, completedPuzzles,
+          solvedClues, puzzleInkCounter, compendiumPublished } = req.body;
   try {
     saveUserState(req.userId, {
       quills, goldenNotebooks, publishedLexicons, ownedCovers, ownedPages,
       activeCoverId, activePageId, permUpgradeLevels,
       achievementProgress, achievementLevels, volatileState,
+      puzzlesUnlocked, puzzleHints, activePuzzle, completedPuzzles,
+      solvedClues, puzzleInkCounter, compendiumPublished,
     });
     res.json({ ok: true });
   } catch (err) {

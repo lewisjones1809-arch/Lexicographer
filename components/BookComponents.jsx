@@ -614,13 +614,19 @@ export function BookView({
 // MiniBookCover (library grid thumbnail)
 // ─────────────────────────────────────────────
 
-export function MiniBookCover({ cover, entries, quills, date, volumeNumber, onClick }) {
+const SEAL_COLORS = {
+  bronze: P.textMuted,
+  silver: P.textSecondary,
+  illuminated: P.quill,
+};
+
+export function MiniBookCover({ cover, entries, quills, date, volumeNumber, badge, sealTier, onClick }) {
   return (
     <div
       onClick={onClick}
-      style={{ width: 90, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, transition: "transform 0.15s" }}
-      onMouseOver={e => e.currentTarget.style.transform = "scale(1.05)"}
-      onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}
+      style={{ width: 90, cursor: onClick ? "pointer" : "default", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, transition: "transform 0.15s" }}
+      onMouseOver={e => onClick && (e.currentTarget.style.transform = "scale(1.05)")}
+      onMouseOut={e => onClick && (e.currentTarget.style.transform = "scale(1)")}
     >
       <div style={{
         width: 70, height: 90, borderRadius: "2px 6px 6px 2px",
@@ -638,6 +644,28 @@ export function MiniBookCover({ cover, entries, quills, date, volumeNumber, onCl
         <div style={{ fontSize: 20, fontFamily: "'Junicode',serif", fontWeight: 700, color: cover.accent, lineHeight: 1.1 }}>
           {toRoman(volumeNumber ?? 1)}
         </div>
+        {badge && (
+          <div style={{
+            position: "absolute", bottom: 3, left: "50%", transform: "translateX(-50%)",
+            background: `${P.sage}cc`, borderRadius: 3, padding: "1px 5px",
+            fontSize: 6, fontFamily: "'Junicode',sans-serif", fontWeight: 700,
+            color: "#fff", letterSpacing: 0.3, whiteSpace: "nowrap",
+          }}>{badge}</div>
+        )}
+        {sealTier && SEAL_COLORS[sealTier] && (
+          <div style={{
+            position: "absolute", top: 3, right: 3,
+            width: 14, height: 14, borderRadius: "50%",
+            border: `1.5px solid ${SEAL_COLORS[sealTier]}`,
+            background: `${SEAL_COLORS[sealTier]}20`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <span style={{
+              fontSize: 5, fontFamily: "'Junicode',sans-serif", fontWeight: 700,
+              color: SEAL_COLORS[sealTier], lineHeight: 1,
+            }}>{sealTier === "illuminated" ? "I" : sealTier === "silver" ? "S" : "B"}</span>
+          </div>
+        )}
       </div>
       <div style={{ fontSize: 9, color: P.quill, fontFamily: "'Junicode',sans-serif", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
         <span>{entries.length} word{entries.length !== 1 ? "s" : ""}</span>

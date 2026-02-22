@@ -41,7 +41,7 @@ function getUpgCard(upg, level) {
   };
 }
 
-export function ShopTab({ quills, goldenNotebooks, ownedCovers, ownedPages, activeCoverId, activePageId, setActiveCoverId, setActivePageId, buyItem, showMsg, permUpgradeLevels, buyPermUpgrade, unlockedQtys = [1], currentUser, onShowAuth, onBuyIap, uiScale = 1 }) {
+export function ShopTab({ quills, goldenNotebooks, ownedCovers, ownedPages, activeCoverId, activePageId, setActiveCoverId, setActivePageId, buyItem, showMsg, permUpgradeLevels, buyPermUpgrade, unlockedQtys = [1], puzzlesUnlocked, puzzleHints, buyHints, currentUser, onShowAuth, onBuyIap, uiScale = 1 }) {
   const sc = n => Math.round(n * uiScale);
   const [shopTab, setShopTab] = useState("design");
   const [designTab, setDesignTab] = useState("covers");
@@ -87,7 +87,7 @@ export function ShopTab({ quills, goldenNotebooks, ownedCovers, ownedPages, acti
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
             {PERM_UPGRADES.map(upg => {
-              const isLocked = upg.lockedIf?.({ permUpgradeLevels }) ?? false;
+              const isLocked = upg.lockedIf?.({ permUpgradeLevels, puzzlesUnlocked }) ?? false;
               const level = permUpgradeLevels[upg.id] || 0;
               const { maxed, cost, description, boxLabel } = getUpgCard(upg, level);
               const isFormula = !upg.levels;
@@ -169,6 +169,52 @@ export function ShopTab({ quills, goldenNotebooks, ownedCovers, ownedPages, acti
               );
             })}
           </div>
+
+          {/* Puzzle Hints — only shown when puzzles are unlocked */}
+          {puzzlesUnlocked && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize:sc(14), fontFamily:"'BLKCHCRY',serif", color:P.textPrimary, fontWeight:700, letterSpacing:1, marginBottom:8 }}>Puzzle Hints</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                {[
+                  { type:"revealTile",          label:"Reveal Tile",          desc:"Reveals one correct letter in a clue", count:3, cost:1 },
+                  { type:"revealWord",           label:"Reveal Word",          desc:"Reveals all letters in a clue",        count:2, cost:2 },
+                  { type:"letterConfirmation",   label:"Letter Confirmation",  desc:"Check if your placed letters are correct", count:5, cost:1 },
+                  { type:"clueRewrite",          label:"Clue Rewrite",         desc:"Shows an alternative clue text",       count:3, cost:1 },
+                ].map(h => (
+                  <div key={h.type} style={{
+                    display:"flex", alignItems:"center", gap:12, padding:10,
+                    background: P.surfaceBg, border: `1px solid ${P.borderLight}`,
+                    borderRadius:8,
+                  }}>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:sc(12), color:P.textPrimary, fontFamily:"'Junicode',sans-serif", fontWeight:700 }}>
+                        {h.label}
+                        <span style={{ fontSize:sc(9), color:P.quill, marginLeft:6, fontWeight:400 }}>
+                          ({puzzleHints?.[h.type] || 0} owned)
+                        </span>
+                      </div>
+                      <div style={{ fontSize:sc(9), color:P.textMuted, fontFamily:"'Junicode',sans-serif" }}>
+                        {h.desc} · Pack of {h.count}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => goldenNotebooks >= h.cost && buyHints(h.type, h.count, h.cost)}
+                      style={{
+                        padding:"5px 12px", border:"none", borderRadius:4,
+                        cursor: goldenNotebooks >= h.cost ? "pointer" : "default",
+                        background: goldenNotebooks >= h.cost ? P.btnActiveBg : P.btnInactiveBg,
+                        color: goldenNotebooks >= h.cost ? P.btnActiveText : P.btnInactiveText,
+                        fontSize:sc(10), fontFamily:"'Junicode',sans-serif",
+                        opacity: goldenNotebooks >= h.cost ? 1 : 0.5,
+                      }}
+                    >
+                      <BookMarked size={sc(9)} style={{ verticalAlign:"middle", marginRight:2 }}/> {h.cost}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
