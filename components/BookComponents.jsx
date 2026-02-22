@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { FeatherIcon as Feather, ApertureIcon as Aperture } from "../assets/icons";
+import { FeatherIcon as Feather, ApertureIcon as Aperture, BookMarkedIcon as BookMarked } from "../assets/icons";
 import { P } from "../styles.js";
 import { WORDS_PER_PAGE, TILE_TYPES, LETTER_SCORES } from "../constants.js";
 import { sortEntries, fmt } from "../gameUtils.js";
@@ -42,19 +43,20 @@ function getScoreLabel(lt) {
     case "triple_letter": return { score: base, mult: "×3" };
     case "double_word":   return { score: base, mult: null };
     case "triple_word":   return { score: base, mult: null };
-    case "golden":        return { score: base, mult: "★"  };
+    case "golden":        return { score: base, mult: null };
     case "lexicoin":      return { score: 0,    mult: null };
     default:              return { score: base, mult: null };
   }
 }
 
-function ScoreTooltip({ tileLetters, rect }) {
+export function ScoreBreakdown({ tileLetters, rect }) {
   const wordMult = tileLetters.reduce((m, lt) => {
     if (lt.type === "double_word") return m * 2;
     if (lt.type === "triple_word") return m * 3;
     return m;
   }, 1);
   let letterTotal = 0;
+  const goldenCount = tileLetters.filter(lt => lt.type === "golden").length;
   for (const lt of tileLetters) {
     const base = LETTER_SCORES[lt.letter] ?? 0;
     if      (lt.type === "double_letter") letterTotal += base * 2;
@@ -63,42 +65,72 @@ function ScoreTooltip({ tileLetters, rect }) {
     else                                  letterTotal += base;
   }
   const total = letterTotal * wordMult;
-  const approxWidth = tileLetters.length * 24 + 90;
-  const left = Math.max(8, Math.min(rect.left, window.innerWidth - approxWidth - 8));
-  return (
-    <div style={{
+  const floating = !!rect;
+
+  const floatingStyle = floating ? (() => {
+    const approxWidth = tileLetters.length * 24 + 90;
+    const left = Math.max(8, Math.min(rect.left, window.innerWidth - approxWidth - 8));
+    return {
       position: "fixed", top: rect.top, left,
       transform: "translateY(calc(-100% - 6px))",
-      background: P.panelBg, border: `1px solid ${P.border}`, borderRadius: 6,
-      padding: "8px 10px", zIndex: 300, display: "flex", alignItems: "flex-end", gap: 5,
-      boxShadow: "0 4px 16px rgba(44,36,32,0.18)", pointerEvents: "none",
+      zIndex: 300, pointerEvents: "none",
+      boxShadow: "0 4px 16px rgba(44,36,32,0.18)",
+    };
+  })() : {};
+
+  const box = (
+    <div style={{
+      ...floatingStyle,
+      padding: "6px 10px", ...(floating ? {} : { marginTop: 8 }),
+      background: floating ? P.panelBg : `${P.quill}08`,
+      border: `1px solid ${floating ? P.border : `${P.quill}20`}`,
+      borderRadius: 6, fontFamily: "'Junicode',sans-serif", fontSize: 12,
+      color: P.textSecondary, lineHeight: 1.6,
     }}>
-      {tileLetters.map((lt, i) => {
-        const { score, mult } = getScoreLabel(lt);
-        return (
-          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-            <BookTile letter={lt.letter} type={lt.type} size={18} />
-            <div style={{ fontFamily: "'Junicode',sans-serif", fontSize: 9, color: P.textSecondary, textAlign: "center", lineHeight: 1 }}>
-              {score !== null && <span>{score}</span>}
-              {mult && <span style={{ color: P.textMuted }}>{mult}</span>}
+      <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
+        <Aperture size={12} style={{ color: P.quill }} />
+        <span style={{ fontWeight: 700, color: P.textPrimary, fontSize: 12 }}>Score breakdown:</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+        {tileLetters.map((lt, i) => {
+          const { score, mult } = getScoreLabel(lt);
+          return (
+            <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+              <BookTile letter={lt.letter} type={lt.type} size={18} />
+              <div style={{ fontFamily: "'Junicode',sans-serif", fontSize: 9, color: P.textSecondary, textAlign: "center", lineHeight: 1 }}>
+                {score !== null && <span>{score}</span>}
+                {mult && <span style={{ color: P.textMuted }}>{mult}</span>}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+        <div style={{
+          fontFamily: "'Junicode',sans-serif", fontSize: 12, fontWeight: 700,
+          color: P.textPrimary, borderLeft: `1px solid ${floating ? P.border : `${P.quill}30`}`, paddingLeft: 8, marginLeft: 2,
+          display: "flex", alignItems: "center", gap: 3,
+        }}>
+          = {letterTotal}
+        </div>
+      </div>
       {wordMult > 1 && (
-        <div style={{ fontFamily: "'Junicode',sans-serif", fontSize: 12, fontWeight: 700, color: P.textPrimary, paddingBottom: 2 }}>
-          ×{wordMult}
+        <div style={{ paddingLeft: 2, marginTop: 2 }}>
+          Word multiplier: ×{wordMult} = <b>{total}</b>
         </div>
       )}
-      <div style={{
-        fontFamily: "'Junicode',sans-serif", fontSize: 12, fontWeight: 700,
-        color: P.ink, paddingBottom: 2, borderLeft: `1px solid ${P.border}`, paddingLeft: 8, marginLeft: 2,
-        display: "flex", alignItems: "center", gap: 3,
-      }}>
-        <Aperture size={10} />{total}
+      {goldenCount > 0 && (
+        <div style={{ color: TILE_TYPES.golden.text, paddingLeft: 2, marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+          <BookMarked size={12} /> {goldenCount} Golden Notebook{goldenCount > 1 ? "s" : ""}
+        </div>
+      )}
+      <div style={{ paddingLeft: 2, marginTop: 2 }}>
+        Total: <b style={{ color: P.quill, display: "inline-flex", alignItems: "center", gap: 3 }}>
+          <Aperture size={10} />{total} Lexicoins
+        </b>
       </div>
     </div>
   );
+
+  return floating ? box : box;
 }
 
 // ─────────────────────────────────────────────
@@ -169,7 +201,7 @@ function EmptyPage({ pageStyle, scale, slotNum, volumeNumber, allEntries }) {
   );
 }
 
-function WordPage({ slotNum, pageEntries, allEntries, pageStyle, scale, hoveredEntry, setHoveredEntry, volumeNumber, bw }) {
+function WordPage({ slotNum, pageEntries, allEntries, pageStyle, scale, hoveredEntry, setHoveredEntry, volumeNumber, bw, typingAnim }) {
   const s = n => Math.round(n * scale);
   const interactive = !!setHoveredEntry;
   return (
@@ -205,6 +237,9 @@ function WordPage({ slotNum, pageEntries, allEntries, pageStyle, scale, hoveredE
           const fitted = Math.floor((maxAvail - (n - 1) * 2) / n);
           const tileSize = Math.max(8, Math.min(s(15), fitted));
           const isHovered = interactive && hoveredEntry?.index === wi && hoveredEntry?.slotNum === slotNum;
+          const isTyping = typingAnim && entry.word === typingAnim.word;
+          const visibleCount = isTyping ? typingAnim.charCount : n;
+          const typingDone = isTyping && typingAnim.charCount >= n;
           return (
             <div
               key={wi}
@@ -217,15 +252,20 @@ function WordPage({ slotNum, pageEntries, allEntries, pageStyle, scale, hoveredE
                 cursor: "default", flex: "1 1 0", minHeight: 0, overflow: "hidden",
               }}
             >
-              {isHovered && <ScoreTooltip tileLetters={tileLetters} rect={hoveredEntry.rect} />}
+              {isHovered && createPortal(<ScoreBreakdown tileLetters={tileLetters} rect={hoveredEntry.rect} />, document.body)}
               <div style={{ display: "flex", gap: 2, overflow: "hidden", flex: 1, minWidth: 0, height: s(16), alignItems: "center" }}>
-                {tileLetters.map((lt, i) => <BookTile key={i} letter={lt.letter} type={lt.type} size={tileSize} />)}
+                {tileLetters.slice(0, visibleCount).map((lt, i) => <BookTile key={i} letter={lt.letter} type={lt.type} size={tileSize} />)}
+                {isTyping && !typingDone && (
+                  <div style={{ width: 1, height: tileSize, background: pageStyle.accent, opacity: 0.7, flexShrink: 0 }}/>
+                )}
               </div>
-              <span style={{ fontFamily: "'Junicode',sans-serif", fontSize: s(9), color: pageStyle.accent, whiteSpace: "nowrap", marginLeft: 4, flexShrink: 0 }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
-                  <Aperture size={s(7)}/>{entry.score}
+              {(!isTyping || typingDone) && (
+                <span style={{ fontFamily: "'Junicode',sans-serif", fontSize: s(9), color: pageStyle.accent, whiteSpace: "nowrap", marginLeft: 4, flexShrink: 0 }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+                    <Aperture size={s(7)}/>{entry.score}
+                  </span>
                 </span>
-              </span>
+              )}
             </div>
           );
         })}
@@ -265,6 +305,7 @@ export function BookView({
   onClose, volumeNumber, onPublish,
   spread: controlledSpread,
   setSpread: setControlledSpread,
+  typingAnim,
 }) {
   const [internalSpread, setInternalSpread] = useState(0);
   const spread    = controlledSpread !== undefined ? controlledSpread  : internalSpread;
@@ -322,6 +363,7 @@ export function BookView({
         setHoveredEntry={isFlipFace ? null : setHoveredEntry}
         volumeNumber={volumeNumber}
         bw={bw}
+        typingAnim={isFlipFace ? null : typingAnim}
       />
     );
   };

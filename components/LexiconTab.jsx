@@ -1,17 +1,70 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { ApertureIcon as Aperture } from "../assets/icons";
 import { Keyboard } from "lucide-react";
+import { WORDS_PER_PAGE } from "../constants.js";
 import { P, st } from "../styles.js";
-import { fmt, assignTilesFromBoard, scoreWordWithTiles, scoreWord, getAvailableLetterCounts } from "../gameUtils.js";
-import { BookView } from "./BookComponents.jsx";
+import { fmt, assignTilesFromBoard, scoreWordWithTiles, scoreWord, sortEntries } from "../gameUtils.js";
+import { BookView, ScoreBreakdown } from "./BookComponents.jsx";
 import { LetterTile, LexiconKeyboard, WordBoard } from "./WordBoard.jsx";
+import { QwertyInventory } from "./QwertyInventory.jsx";
 
 function formatMonkeyTimer(s) {
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
+
+// ── Typewriter sound synthesis (Web Audio API) ──
+
+function playTypeClick(ctx) {
+  const t = ctx.currentTime;
+
+  // Layer 1 — sharp mechanical strike (key bar hitting platen)
+  const strikeDur = 0.05;
+  const strikeLen = Math.ceil(ctx.sampleRate * strikeDur);
+  const strikeBuf = ctx.createBuffer(1, strikeLen, ctx.sampleRate);
+  const sd = strikeBuf.getChannelData(0);
+  for (let i = 0; i < strikeLen; i++) {
+    sd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (strikeLen * 0.08));
+  }
+  const strikeSrc = ctx.createBufferSource();
+  strikeSrc.buffer = strikeBuf;
+  strikeSrc.playbackRate.value = 0.9 + Math.random() * 0.2;
+  const strikeBp = ctx.createBiquadFilter();
+  strikeBp.type = "bandpass";
+  strikeBp.frequency.value = 2500 + Math.random() * 1500;
+  strikeBp.Q.value = 2.0;
+  const strikeGain = ctx.createGain();
+  strikeGain.gain.value = 0.18 + Math.random() * 0.04;
+  strikeSrc.connect(strikeBp);
+  strikeBp.connect(strikeGain);
+  strikeGain.connect(ctx.destination);
+  strikeSrc.start(t);
+
+  // Layer 2 — low-frequency body thud (mechanical weight)
+  const thudDur = 0.06;
+  const thudLen = Math.ceil(ctx.sampleRate * thudDur);
+  const thudBuf = ctx.createBuffer(1, thudLen, ctx.sampleRate);
+  const td = thudBuf.getChannelData(0);
+  for (let i = 0; i < thudLen; i++) {
+    td[i] = (Math.random() * 2 - 1) * Math.exp(-i / (thudLen * 0.15));
+  }
+  const thudSrc = ctx.createBufferSource();
+  thudSrc.buffer = thudBuf;
+  thudSrc.playbackRate.value = 0.4 + Math.random() * 0.2;
+  const thudLp = ctx.createBiquadFilter();
+  thudLp.type = "lowpass";
+  thudLp.frequency.value = 200 + Math.random() * 100;
+  thudLp.Q.value = 1.0;
+  const thudGain = ctx.createGain();
+  thudGain.gain.value = 0.12 + Math.random() * 0.03;
+  thudSrc.connect(thudLp);
+  thudLp.connect(thudGain);
+  thudGain.connect(ctx.destination);
+  thudSrc.start(t);
+}
+
 
 export function LexiconTab({
   letters, specialTiles, totalLetters, collectedInk, lexicon, inkCost,
@@ -27,6 +80,9 @@ export function LexiconTab({
   const [viewH, setViewH] = useState(window.innerHeight);
   const [viewW, setViewW] = useState(window.innerWidth);
   const [bookSpread, setBookSpread] = useState(0);
+  const [typingAnim, setTypingAnim] = useState(null);
+  const audioCtxRef = useRef(null);
+
   useEffect(() => {
     const onResize = () => { setViewH(window.innerHeight); setViewW(window.innerWidth); };
     window.addEventListener("resize", onResize);
@@ -50,7 +106,22 @@ export function LexiconTab({
     return () => timers.forEach(clearTimeout);
   }, [monkeyAnims, clearMonkeyAnim]);
 
-  const letterEntries = Object.entries(letters).sort((a,b) => a[0].localeCompare(b[0]));
+  // ── Typewriter character progression ──
+  useEffect(() => {
+    if (!typingAnim) return;
+    const ctx = audioCtxRef.current;
+    if (typingAnim.charCount < typingAnim.word.length) {
+      const timer = setTimeout(() => {
+        if (ctx) playTypeClick(ctx);
+        setTypingAnim(prev => prev ? { ...prev, charCount: prev.charCount + 1 } : null);
+      }, 120);
+      return () => clearTimeout(timer);
+    } else {
+      const timer = setTimeout(() => setTypingAnim(null), 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [typingAnim?.charCount, typingAnim?.word]);
+
   const word = wordString.toUpperCase();
   const alreadyInLexicon = word.length >= 3 && lexicon.some(e => e.word === word);
   const valid = word.length >= 3 && !alreadyInLexicon && isValidWord(word);
@@ -62,18 +133,37 @@ export function LexiconTab({
   const hasPendingLexicoin = wordTiles.some(t => t.tileType === "lexicoin" && t.letter === null);
   const canAssign = boardResult !== null && !hasPendingLexicoin;
 
-  const previewScore = valid && canAssign ? scoreWordWithTiles(boardResult.assignments) : null;
+  const previewScore = useMemo(() => {
+    if (!valid || !canAssign) return null;
+    const result = scoreWordWithTiles(boardResult.assignments);
+    const tileLetters = boardResult.assignments.map(a => ({ letter: a.letter, type: a.type }));
+    return { ...result, tileLetters };
+  }, [valid, canAssign, boardResult]);
 
-  // Group special tiles by key for display
-  const specByKey = {};
-  specialTiles.forEach(t => {
-    const k = t.type === "lexicoin" ? "_wild" : `${t.letter}_${t.type}`;
-    specByKey[k] = specByKey[k] || { letter:t.letter, type:t.type, count:0, tiles:[] };
-    specByKey[k].count++;
-    specByKey[k].tiles.push(t);
-  });
-  const usedLexicoins = wordTiles.filter(t => t.tileType === "lexicoin").length;
-  const availLexicoins = (specByKey._wild?.count || 0) - usedLexicoins;
+  const handleInscribe = () => {
+    if (!valid || !canAssign || collectedInk < inkCost) {
+      createWord(); // let createWord show its own error messages
+      return;
+    }
+    const animWord = wordString.toUpperCase().trim();
+    const animScore = previewScore.total;
+
+    createWord();
+
+    // Navigate book to the spread containing the new word
+    const newSorted = sortEntries([...lexicon, { word: animWord, score: animScore }]);
+    const wordIdx = newSorted.findIndex(e => e.word === animWord);
+    if (wordIdx >= 0) {
+      const pageSlot = Math.floor(wordIdx / WORDS_PER_PAGE) + 1; // +1 because slot 0 is IFC
+      setBookSpread(Math.floor(pageSlot / 2));
+    }
+
+    // Initialize audio context on user interaction
+    if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
+    if (audioCtxRef.current.state === "suspended") audioCtxRef.current.resume();
+
+    setTypingAnim({ word: animWord, charCount: 0 });
+  };
 
   // Column slot ranges: inner-left 0-4, outer-left 5-9, inner-right 10-14, outer-right 15-19
   const monkeyColumn = (indices) => {
@@ -134,7 +224,7 @@ export function LexiconTab({
           {/* Book */}
           <div style={{ flexShrink:0 }}>
             <BookView entries={lexicon} cover={activeCover} pageStyle={activePageStyle} bw={bookW} bh={bookH} volumeNumber={volumeNumber} onPublish={publishLexicon}
-            spread={bookSpread} setSpread={setBookSpread} />
+            spread={bookSpread} setSpread={setBookSpread} typingAnim={typingAnim} />
           </div>
           {/* Right inner column: slots 10-14 */}
           {monkeyCount > 10 && monkeyColumn([10,11,12,13,14])}
@@ -163,68 +253,49 @@ export function LexiconTab({
             }}
           />
           <div style={{ display:"flex", justifyContent:"flex-end", marginTop:8 }}>
-            <button onClick={createWord} style={st.btn(valid && canAssign && collectedInk >= inkCost)}>Inscribe</button>
+            <button onClick={handleInscribe} style={st.btn(valid && canAssign && collectedInk >= inkCost)}>Inscribe</button>
           </div>
-          {wordTiles.length > 0 && (
+          {/* Score breakdown box */}
+          {previewScore && (
+            <ScoreBreakdown tileLetters={previewScore.tileLetters} />
+          )}
+          {/* Validation feedback */}
+          {wordTiles.length > 0 && !previewScore && (
             <div style={{ fontSize:12, display:"flex", gap:8, flexWrap:"wrap", alignItems:"center", marginTop:6 }}>
-              {previewScore ? (
-                <span style={{ color:P.quill, fontWeight:600, display:"inline-flex", alignItems:"center", gap:3 }}>
-                  <Aperture size={12}/>{previewScore.total} Lexicoins{previewScore.goldenCount > 0 ? `, ${previewScore.goldenCount} Notebook${previewScore.goldenCount > 1 ? "s" : ""}` : ""}
-                </span>
-              ) : word.length > 0 && (
+              {word.length > 0 && (
                 <span style={{ color:P.textSecondary, display:"inline-flex", alignItems:"center", gap:3 }}><Aperture size={12}/>{scoreWord(word)}</span>
               )}
               {alreadyInLexicon && <span style={{ color:P.rose, fontWeight:600 }}>— already in lexicon</span>}
               {word.length >= 3 && !alreadyInLexicon && !isValidWord(word) && <span style={{ color:P.rose, fontWeight:600 }}>— not a valid word</span>}
-              {valid && <span style={{ color:P.sage }}>✓ valid</span>}
               {word.length >= 3 && !canAssign && <span style={{ color:P.rose }}>— missing letters</span>}
-              {collectedInk < inkCost && <span style={{ color:P.rose }}>— not enough ink</span>}
             </div>
+          )}
+          {previewScore && collectedInk < inkCost && (
+            <div style={{ fontSize:12, color:P.rose, fontWeight:600, marginTop:4 }}>— not enough ink</div>
           )}
         </div>
 
-        {/* Letter inventory */}
+        {/* Letter inventory — QWERTY keyboard */}
         <div style={st.panel}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:10 }}>
             <div style={st.heading}>Your Letters</div>
             <div style={{ fontSize:12, color:P.textMuted, fontFamily:"'Junicode',sans-serif" }}>{totalLetters}/{maxLetters}</div>
           </div>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:8, minHeight:44 }}>
-            {letterEntries.length === 0 && specialTiles.length === 0 ? (
-              <div style={{ fontSize:13, color:P.textMuted, fontStyle:"italic" }}>No letters yet — visit the Press tab!</div>
-            ) : (<>
-              {letterEntries.map(([l, tc]) => {
-                const avail = getAvailableLetterCounts(letters, specialTiles, wordString);
-                const available = (avail[l]||0) > 0 || avail._wildcards > 0;
-                const boardUsed = wordTiles.filter(t => t.letter === l && t.tileType === "normal").length;
-                return <LetterTile key={l} letter={l} count={Math.max(0, tc - boardUsed)} onClick={() => addWordTile(l)} dimmed={!available}
-                  draggable={available}
-                  onDragStart={e => { e.dataTransfer.effectAllowed="move"; e.dataTransfer.setData("text/plain", JSON.stringify({ source:"inventory", letter:l, tileType:"normal" })); }}
-                />;
-              })}
-              {/* Special tiles */}
-              {Object.values(specByKey).map(g => {
-                const isWild = g.type === "lexicoin";
-                const wildDimmed = isWild && availLexicoins <= 0;
-                return (
-                  <LetterTile key={g.type + (g.letter||"W")}
-                    letter={g.letter||""}
-                    count={isWild ? availLexicoins : g.count}
-                    onClick={() => {
-                      if (isWild && availLexicoins > 0) {
-                        const tileId = addLexiconPlaceholder(null);
-                        if (tileId !== null) { setPendingLexiconTileId(tileId); setLexiconPickerOpen(true); }
-                      } else if (!isWild && g.letter) addWordTile(g.letter, g.type);
-                    }}
-                    size={40} tileType={g.type} dimmed={wildDimmed}
-                    draggable={isWild ? availLexicoins > 0 : !wildDimmed}
-                    onDragStart={e => { e.dataTransfer.effectAllowed="move"; e.dataTransfer.setData("text/plain", JSON.stringify({ source:"inventory", letter: isWild ? null : g.letter, tileType:g.type })); }}
-                  />
-                );
-              })}
-            </>)}
-          </div>
-          {wordTiles.length > 0 && <div style={{ marginTop:8, fontSize:11, color:P.textMuted, fontStyle:"italic" }}>{wordTiles.length} letter{wordTiles.length!==1?"s":""} placed</div>}
+          <QwertyInventory
+            letters={letters}
+            specialTiles={specialTiles}
+            wordTiles={wordTiles}
+            onTileClick={addWordTile}
+            onWildcardClick={() => {
+              const tileId = addLexiconPlaceholder(null);
+              if (tileId !== null) { setPendingLexiconTileId(tileId); setLexiconPickerOpen(true); }
+            }}
+          />
+          {wordTiles.length > 0 && (
+            <div style={{ marginTop:8, fontSize:11, color:P.textMuted, fontStyle:"italic" }}>
+              {wordTiles.length} letter{wordTiles.length !== 1 ? "s" : ""} placed
+            </div>
+          )}
         </div>
 
         {/* Lexicoin keyboard picker */}

@@ -295,17 +295,29 @@ export function WordBoard({ wordTiles, removeWordTile, reorderWordTiles, insertW
                   fontWeight: 700, color: tt.text, userSelect: "none",
                   cursor: removing ? "default" : "grab",
                   boxShadow: "0 1px 4px rgba(44,36,32,0.10)",
+                  position: "relative",
                 }}>
                   {tile.tileType === "lexicoin" && tile.letter === null ? <Aperture size={18} /> : tile.letter}
+                  {/* Tile type label — top-left (DL, TL, DW, TW, ★) */}
+                  {tile.tileType && tile.tileType !== "normal" && tile.tileType !== "lexicoin" && tt.label && (
+                    <span style={{
+                      position: "absolute", top: 2, left: 3,
+                      fontSize: 8, fontWeight: 700,
+                      fontFamily: "'Junicode',sans-serif", lineHeight: 1,
+                      color: tt.text, opacity: 0.6,
+                    }}>{tt.label}</span>
+                  )}
+                  {/* Score — inside tile, bottom-right (Scrabble style) */}
+                  {tile.tileType !== "lexicoin" && tile.letter && LETTER_SCORES[tile.letter] !== undefined && (
+                    <span style={{
+                      position: "absolute", bottom: 3, right: 4,
+                      fontSize: 11, fontWeight: 700,
+                      fontFamily: "'Junicode',sans-serif", lineHeight: 1,
+                      color: tt.text, opacity: 0.65,
+                    }}>{LETTER_SCORES[tile.letter]}</span>
+                  )}
                 </div>
               </div>
-              {!removing && tile.tileType !== "lexicoin" && tile.letter && LETTER_SCORES[tile.letter] !== undefined && (
-                <span style={{
-                  position: "absolute", bottom: -5, left: -5,
-                  background: "#7a6e62", color: "#ffffff", borderRadius: 3, padding: "1px 3px",
-                  fontSize: 7, fontWeight: 700, fontFamily: "'Junicode',sans-serif", lineHeight: 1.2, zIndex: 1,
-                }}>{LETTER_SCORES[tile.letter]}</span>
-              )}
               {!removing && (
                 <button onClick={() => handleRemove(tile.id)} style={{
                   position: "absolute", top: -7, right: -3, width: 18, height: 18,

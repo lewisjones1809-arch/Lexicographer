@@ -27,7 +27,8 @@ React 18 app built with Vite 5. Entry point is [main.jsx](main.jsx) which import
 | [lexicographer.jsx](lexicographer.jsx) | Root component: all state, effects, handlers, JSX shell |
 | [constants.js](constants.js) | All game constants: `LETTER_FREQ`, `LETTER_SCORES`, costs, managers, `TILE_TYPES`, `COVERS`, `PAGE_STYLES`, `TABS` |
 | [styles.js](styles.js) | `P` (colour palette), `st` (style helpers) |
-| [gameUtils.js](gameUtils.js) | Pure game logic: `randomLetter`, `fmt`, `scoreWord`, `assignTilesFromBoard`, `scoreWordWithTiles`, `calculateQuillsBreakdown`, `canSupplyLetter`, `getAvailableLetterCounts`, `nextTileId`, `rollCrit`, `rollTileType`, `computeEffectiveTileProbs`, `sortEntries`, `generateNonWord`, `applyMonkeyTileBonuses`, `computeOfflineProgress` |
+| [gameUtils.js](gameUtils.js) | Pure game logic: `randomLetter`, `fmt`, `scoreWord`, `assignTilesFromBoard`, `scoreWordWithTiles`, `calculateQuillsBreakdown`, `calculateCompendiumBreakdown`, `canSupplyLetter`, `getAvailableLetterCounts`, `nextTileId`, `rollCrit`, `rollTileType`, `computeEffectiveTileProbs`, `sortEntries`, `generateNonWord`, `applyMonkeyTileBonuses`, `computeOfflineProgress` |
+| [puzzles/puzzleData.js](puzzles/puzzleData.js) | `DIFFICULTY_CONFIG`, `CLUE_DB`, `PUZZLES` — static hand-authored crossword puzzle definitions |
 | [upgradeUtils.js](upgradeUtils.js) | `mkWellUpg`, `mkMgrUpg`, `mkPressUpg`, `calcBulkBuy`, `calcQtyBuy`, `fmtUpgradeVal`, `cycleQty` |
 | [upgrades.js](upgrades.js) | `UPGRADES_BY_NAME` (keyed by name), `BASE_TILE_PROBS` — per-device upgrade definitions, formulas, cost curves, max levels |
 | [permanentUpgrades.js](permanentUpgrades.js) | `PERM_UPGRADES` array — quill-purchased upgrades that persist across publish rounds |
@@ -48,6 +49,7 @@ React 18 app built with Vite 5. Entry point is [main.jsx](main.jsx) which import
 | [components/DebugPanel.jsx](components/DebugPanel.jsx) | `DebugPanel` |
 | [components/WordBoard.jsx](components/WordBoard.jsx) | `LetterTile`, `LexiconKeyboard`, `WordBoard` |
 | [components/DeviceCards.jsx](components/DeviceCards.jsx) | `QtySelector`, `InfoRow`, `WellMiniCard`, `PressMiniCard`, `DeviceUpgradeCard` |
+| [components/PuzzlesTab.jsx](components/PuzzlesTab.jsx) | `PuzzlesTab` — puzzle selection, active puzzle solver, compendium publish flow |
 | [components/BookComponents.jsx](components/BookComponents.jsx) | `BookView`, `MiniBookCover` |
 | [components/GameCanvas.jsx](components/GameCanvas.jsx) | `GameCanvas` — PixiJS v8 overlay (`forwardRef`), exposes `playCritBubble(x, y, text)` imperative handle |
 | [components/MissionsPanel.jsx](components/MissionsPanel.jsx) | `MissionsTrigger`, `MissionsPanel` |
@@ -82,11 +84,13 @@ server/
 1. **Ink Wells** — fill passively via a 100ms `setInterval` tick, modified by `effectiveInkMult` (from Ink Multiplier perm upgrade). Player collects manually or hires well managers for auto-collection when full. Crit chance applies on collection.
 2. **Letter Presses** — player starts 10-second production cycles to generate letters. Rare special tiles (DL, TL, DW, TW, ★, `◈` Lexicoin wildcard) can be produced. Press managers auto-start idle presses.
 3. **Word Creation** — player drags/clicks letters onto a word board, spends ink to inscribe valid English words into the lexicon. Cost uses a triangular formula: `BASE_INK_COST + INK_COST_SCALE/2 × n × (n+1)` where n = current lexicon length.
-4. **Publishing** — converts the current lexicon into quills via `calculateQuillsBreakdown()`. Clears reset-on-publish state for a new round.
-5. **Monkeys** — each monkey fires on a countdown timer (base 300s, reduced by Monkey Efficiency upgrade). On fire: rolls against find chance (base 10%, increased by Monkey Intuition upgrade). Success adds a random word from past published lexicons to the current lexicon; failure shows a fake word animation via `generateNonWord`.
-6. **Daily Missions** — 3 missions generated per UTC day, stored in `localStorage`. Progress tracked in root state via `advanceProgress()` and fed to `MissionsPanel`. Rewards are quills on claim.
-7. **Achievements** — tiered milestones tracked in root state (`achievementProgress` counters, `achievementLevels` claimed tiers). Displayed and claimed via `AchievementsPanel`.
-8. **Offline Progress** — on load, `computeOfflineProgress()` simulates time elapsed since last close: well filling, press completions, and monkey firings. `OfflineRewardModal` shows the result.
+4. **Publishing (Lexicon)** — converts the current lexicon into quills via `calculateQuillsBreakdown()`. Clears reset-on-publish state for a new round.
+5. **Puzzles** — unlocked after 2 lexicons published. Three difficulty tiers: compact (lexicoinMult 1.0), standard (1.5, unlocks after 3 completions), cryptic (2.5, unlocks after 5). Player places letters from inventory onto a crossword grid, inscribing words with ink. Solved words earn Lexicoins scaled by difficulty. Hints (reveal tile, reveal word, letter confirmation, clue rewrite) cost ink.
+6. **Publishing (Compendium)** — after completing 3+ puzzles not yet bound, player can publish a compendium. Quill formula via `calculateCompendiumBreakdown()`: base value from difficulty-weighted puzzle count (compact=1, standard=2, cryptic=4), plus Lexicoin bonus, times cover/page design multiplier. Awards a performance seal (Bronze/Silver/Illuminated based on Lexicoin ratio vs theoretical max) and a procedurally generated acceptance letter. Eligible puzzles are marked `includedInCompendium: true`.
+7. **Monkeys** — each monkey fires on a countdown timer (base 300s, reduced by Monkey Efficiency upgrade). On fire: rolls against find chance (base 10%, increased by Monkey Intuition upgrade). Success adds a random word from past published lexicons to the current lexicon; failure shows a fake word animation via `generateNonWord`.
+8. **Daily Missions** — 3 missions generated per UTC day, stored in `localStorage`. Progress tracked in root state via `advanceProgress()` and fed to `MissionsPanel`. Rewards are quills on claim.
+9. **Achievements** — tiered milestones tracked in root state (`achievementProgress` counters, `achievementLevels` claimed tiers). Displayed and claimed via `AchievementsPanel`.
+10. **Offline Progress** — on load, `computeOfflineProgress()` simulates time elapsed since last close: well filling, press completions, and monkey firings. `OfflineRewardModal` shows the result.
 
 ### Two Upgrade Systems
 
@@ -116,7 +120,7 @@ Special cases passed as props from root:
 
 ### State Structure (`Lexicographer` component)
 
-**Persistent across publish rounds:** `quills`, `goldenNotebooks`, `publishedLexicons`, `ownedCovers`, `ownedPages`, `activeCoverId`, `activePageId`, `permUpgradeLevels`, `monkeyTimers`, `monkeyAnims`, `achievementProgress`, `achievementLevels`, `missions`, `currentUser`
+**Persistent across publish rounds:** `quills`, `goldenNotebooks`, `publishedLexicons`, `ownedCovers`, `ownedPages`, `activeCoverId`, `activePageId`, `permUpgradeLevels`, `monkeyTimers`, `monkeyAnims`, `achievementProgress`, `achievementLevels`, `missions`, `currentUser`, `puzzlesUnlocked`, `puzzleHints`, `activePuzzle`, `completedPuzzles`, `solvedClues`, `puzzleInkCounter`, `compendiumPublished`
 
 **Reset on publish:** `collectedInk`, `letters`, `wordTiles`, `lexicon`, `wellCount`, `wells`, `wellMgrOwned`, `wellMgrEnabled`, `pressCount`, `presses`, `pressMgrOwned`, `specialTiles`, `recentTiles`, `pressEjects`, `wellUpgradeLevels`, `mgrUpgradeLevels`, `pressUpgradeLevels`
 
@@ -144,7 +148,7 @@ These are passed as props to tab components for responsive sizing.
 coverMult = 1 + sum(ownedCovers.map(c => c.mult - 1))
 pageMult  = 1 + sum(ownedPages.map(p => p.mult - 1))
 ```
-Both are applied multiplicatively in the publish quill formula.
+Both are applied multiplicatively in both publish quill formulas (lexicon and compendium).
 
 ### Animations
 
@@ -182,5 +186,7 @@ All inline styles. Colors defined in the `P` object in [styles.js](styles.js). S
 | `WORDS_PER_PAGE` | 10 | Words displayed per book page |
 | `scalingA` | 0.1 | Words multiplier in publish formula (tunable via debug) |
 | `scalingB` | 0.05 | Lexicoin multiplier in publish formula (tunable via debug) |
+| Compendium diff weights | compact=1, standard=2, cryptic=4 | Weights for `calculateCompendiumBreakdown` base value |
+| Compendium publish threshold | 3 eligible puzzles | Minimum unpublished puzzles to publish a compendium |
 | Monkey base timer | 300s | Reset value after firing (reduced by Monkey Efficiency upgrade) |
 | Monkey base find chance | 10% | Success probability (increased by Monkey Intuition upgrade) |

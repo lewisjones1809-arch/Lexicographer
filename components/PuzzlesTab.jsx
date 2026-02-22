@@ -4,9 +4,9 @@ import { Lock, Eye, EyeOff, Check, X, Pencil, BookOpen, Eraser, HelpCircle } fro
 import { ApertureIcon as Aperture, FeatherIcon as Feather } from "../assets/icons";
 import { P, st } from "../styles.js";
 import { fmt, scoreWord, scoreWordWithTiles, calculateCompendiumBreakdown } from "../gameUtils.js";
-import { BASE_INK_COST, INK_COST_SCALE, LETTER_SCORES } from "../constants.js";
+import { BASE_INK_COST, INK_COST_SCALE, LETTER_SCORES, TILE_TYPES } from "../constants.js";
 import { PUZZLES, CLUE_DB, DIFFICULTY_CONFIG } from "../puzzles/puzzleData.js";
-import { LetterTile } from "./WordBoard.jsx";
+import { QwertyInventory } from "./QwertyInventory.jsx";
 
 // ─────────────────────────────────────────────────
 // Helpers
@@ -511,7 +511,7 @@ function PuzzleSelection({ completedPuzzles, compendiumPublished, onSelectPuzzle
 // Crossword Grid Cell
 // ─────────────────────────────────────────────────
 
-function GridCell({ cell, cellSize, isSelected, isActiveCell, clueNumber, onClick, onLongPress, animClass, crackLetter }) {
+function GridCell({ cell, cellSize, isSelected, isActiveCell, clueNumber, onClick, onLongPress, onDragOver, onDrop, isDragOver, animClass, crackLetter }) {
   const longPressTimer = useRef(null);
 
   const handlePointerDown = (e) => {
@@ -550,6 +550,7 @@ function GridCell({ cell, cellSize, isSelected, isActiveCell, clueNumber, onClic
   if (isActiveCell) emptyBg = `${P.ink}18`;
 
   // Tile appearance when a letter occupies the cell (placed or provisional)
+  const tt = (cell.tileType && cell.tileType !== "normal") ? TILE_TYPES[cell.tileType] : null;
   let tileBg, tileBdr, tileTextCol, tileShadow, tileOpacity = 1;
   if (hasTile) {
     if (cell.hintPlaced) {
@@ -557,14 +558,20 @@ function GridCell({ cell, cellSize, isSelected, isActiveCell, clueNumber, onClic
       tileBg = "#faf3e0"; tileBdr = P.quill; tileTextCol = P.quill;
       tileShadow = "0 1px 3px rgba(44,36,32,0.15), inset 0 1px 0 rgba(255,255,255,0.5)";
     } else if (cell.provisional) {
-      // Provisional: slightly faded tile
-      tileBg = "#fdf8e4"; tileBdr = "#c4b46a"; tileTextCol = "#1a1008";
+      // Provisional: slightly faded tile, use bonus tile colors if applicable
+      tileBg = tt ? tt.color : "#fdf8e4";
+      tileBdr = tt ? tt.border : "#c4b46a";
+      tileTextCol = tt ? tt.text : "#1a1008";
       tileShadow = "0 1px 3px rgba(44,36,32,0.12), inset 0 1px 0 rgba(255,255,255,0.5)";
       tileOpacity = 0.75;
     } else {
-      // Committed: full Scrabble tile
-      tileBg = "#fdf8e4"; tileBdr = "#c4b46a"; tileTextCol = "#1a1008";
-      tileShadow = "0 2px 5px rgba(44,36,32,0.2), inset 0 1px 0 rgba(255,255,255,0.65)";
+      // Committed: full Scrabble tile, use bonus tile colors if applicable
+      tileBg = tt ? tt.color : "#fdf8e4";
+      tileBdr = tt ? tt.border : "#c4b46a";
+      tileTextCol = tt ? tt.text : "#1a1008";
+      tileShadow = tt
+        ? "0 2px 5px rgba(44,36,32,0.15), inset 0 1px 0 rgba(255,255,255,0.5)"
+        : "0 2px 5px rgba(44,36,32,0.2), inset 0 1px 0 rgba(255,255,255,0.65)";
     }
   }
 
@@ -578,11 +585,15 @@ function GridCell({ cell, cellSize, isSelected, isActiveCell, clueNumber, onClic
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
       onContextMenu={handleContextMenu}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
       style={{
         width: cellSize, height: cellSize,
-        border: isActiveCell ? `2px solid ${P.ink}` : `1px solid ${P.border}`,
+        border: `1px solid ${P.border}`,
+        outline: isDragOver ? `2px solid ${P.ink}` : isActiveCell ? `2px solid ${P.ink}` : "none",
+        outlineOffset: -2,
         borderRadius: 2,
-        background: emptyBg,
+        background: isDragOver ? `${P.ink}22` : emptyBg,
         display: "flex", alignItems: "center", justifyContent: "center",
         position: "relative", cursor: "pointer",
         boxSizing: "border-box",
@@ -626,6 +637,15 @@ function GridCell({ cell, cellSize, isSelected, isActiveCell, clueNumber, onClic
               fontFamily: "'Junicode',sans-serif", lineHeight: 1,
               color: tileTextCol, opacity: 0.55,
             }}>{score}</span>
+          )}
+          {/* Tile type label for bonus tiles */}
+          {tt && !cell.hintPlaced && (
+            <span style={{
+              position: "absolute", top: Math.round(cellSize * 0.04), left: Math.round(cellSize * 0.06),
+              fontSize: Math.max(5, cellSize * 0.17), fontWeight: 700,
+              fontFamily: "'Junicode',sans-serif", lineHeight: 1,
+              color: tileTextCol, opacity: 0.6,
+            }}>{tt.label}</span>
           )}
           {cell.hintPlaced && (
             <span style={{
@@ -734,6 +754,7 @@ function ActivePuzzleView({
   const [draftModeActive, setDraftModeActive] = useState(false);
   const [focusedCell, setFocusedCell] = useState(null); // "r,c" — user-clicked cell cursor
   const [cellAnims, setCellAnims] = useState({}); // { "r,c": { type: "correct"|"crack", letter? } }
+  const [dragOverCell, setDragOverCell] = useState(null); // "r,c" during drag
   const [floatingCoins, setFloatingCoins] = useState([]); // [{ id, amount, startX, startY }]
   const balanceRef = useRef(null); // ref for the lexicoin balance element
   const gridRef = useRef(null); // ref for the grid container
@@ -847,7 +868,8 @@ function ActivePuzzleView({
     return collectedInk >= inkCost;
   }, [selectedClue, clues, grid, collectedInk, inkCost]);
 
-  // Score preview for selected word (if all letters correct)
+  // Score preview — only shown when every cell in the clue has a letter
+  // (placed, provisional, or hint). Uses the player's entered letters, not the solution.
   const scorePreview = useMemo(() => {
     if (!selectedClue) return null;
     const isAcross = clues.across.includes(selectedClue);
@@ -857,25 +879,37 @@ function ActivePuzzleView({
       const c = isAcross ? selectedClue.col + i : selectedClue.col;
       cells.push(grid[r][c]);
     }
-    // Build the word from answer letters
-    const word = cells.map(c => c.letter).join("");
+    // Only show preview when every cell is filled (placed or provisional)
+    if (!cells.every(c => c.placed || c.provisional)) return null;
+    // Don't show for fully committed (solved) words
+    if (cells.every(c => c.placed)) return null;
+    // Use the player's visible letter, not the solution
+    const playerLetters = cells.map(c => c.placed || c.provisional);
     // Build assignments from non-hint cells
-    const assignments = cells.filter(c => !c.hintPlaced).map(c => ({
-      letter: c.letter,
-      type: c.tileType || "normal",
-      score: LETTER_SCORES[c.letter] || 0,
-    }));
-    const { total: base } = scoreWordWithTiles(assignments);
+    const assignments = cells.filter(c => !c.hintPlaced).map((c, idx) => {
+      const pl = c.placed || c.provisional;
+      return {
+        letter: pl,
+        type: c.tileType || "normal",
+        score: LETTER_SCORES[pl] || 0,
+      };
+    });
+    const { total: base, letterTotal, wordMult, goldenCount } = scoreWordWithTiles(assignments);
     const diffMult = DIFFICULTY_CONFIG[activePuzzle.difficulty]?.lexicoinMult || 1;
     const cleanTotal = Math.round(base * diffMult * 1.5);
     const dirtyTotal = Math.round(base * diffMult);
-    // Per-letter breakdown
+    // Per-letter breakdown using player's letters, showing tile bonuses
     const letterBreak = cells.filter(c => !c.hintPlaced).map(c => {
-      const s = LETTER_SCORES[c.letter] || 0;
-      return `${c.letter}(${s})`;
+      const pl = c.placed || c.provisional;
+      const s = LETTER_SCORES[pl] || 0;
+      const type = c.tileType || "normal";
+      if (type === "lexicoin") return `${pl}(wild)`;
+      if (type === "double_letter") return `${pl}(${s}×2)`;
+      if (type === "triple_letter") return `${pl}(${s}×3)`;
+      return `${pl}(${s})`;
     }).join(" + ");
     const hintCount = cells.filter(c => c.hintPlaced).length;
-    return { word, base, diffMult, cleanTotal, dirtyTotal, letterBreak, hintCount };
+    return { base, letterTotal, diffMult, cleanTotal, dirtyTotal, letterBreak, hintCount, wordMult, goldenCount };
   }, [selectedClue, clues, grid, activePuzzle.difficulty]);
 
   // Available letters
@@ -916,10 +950,11 @@ function ActivePuzzleView({
     }
   };
 
-  // Handle long-press on a cell — clear existing draft
+  // Handle long-press on a cell — clear existing provisional or draft letter
   const handleCellLongPress = (r, c) => {
     const cell = grid[r][c];
-    if (cell.isBlack || cell.placed || !cell.draft) return;
+    if (cell.isBlack || cell.placed) return;
+    if (!cell.provisional && !cell.draft) return;
     // Find which clue + position this cell belongs to
     const clue = selectedClue || [...clues.across, ...clues.down].find(cl => {
       const isAcross = clues.across.includes(cl);
@@ -935,13 +970,17 @@ function ActivePuzzleView({
       for (let i = 0; i < clue.length; i++) {
         const cr = isAcross ? clue.row : clue.row + i;
         const cc = isAcross ? clue.col + i : clue.col;
-        if (cr === r && cc === c) { onRemoveDraft(clue.id, i); return; }
+        if (cr === r && cc === c) {
+          if (cell.provisional) { onRemoveLetter(clue.id, i); }
+          else { onRemoveDraft(clue.id, i); }
+          return;
+        }
       }
     }
   };
 
   // Handle letter tile click — place at active cell (cursor), then advance cursor
-  const handleLetterClick = (letter, tileId) => {
+  const handleLetterClick = (letter, tileId, tileType) => {
     if (!selectedClue || !activeCell) return;
     const isAcross = clues.across.includes(selectedClue);
     // Find which position in the clue the active cell corresponds to
@@ -958,7 +997,7 @@ function ActivePuzzleView({
     if (draftModeActive) {
       onPlaceDraft(selectedClue.id, placedIdx, letter);
     } else {
-      onPlaceLetter(selectedClue.id, placedIdx, tileId || null, letter);
+      onPlaceLetter(selectedClue.id, placedIdx, tileId || null, letter, tileType || "normal");
     }
     // Advance cursor to next empty cell after this position
     for (let i = placedIdx + 1; i < selectedClue.length; i++) {
@@ -973,11 +1012,29 @@ function ActivePuzzleView({
     setFocusedCell(null);
   };
 
-  // Handle remove — erase the last non-committed letter (provisional or draft) in selected clue
-  // Then move cursor to the erased cell
+  // Handle remove — erase the letter at the active cell (provisional or draft).
+  // If active cell is empty/committed, fall back to erasing the last erasable letter in the clue.
   const handleErase = () => {
     if (!selectedClue) return;
     const isAcross = clues.across.includes(selectedClue);
+
+    // Try erasing at the active cell first
+    if (activeCell) {
+      const [ar, ac] = activeCell.split(",").map(Number);
+      const cell = grid[ar][ac];
+      // Find position index within the clue
+      for (let i = 0; i < selectedClue.length; i++) {
+        const r = isAcross ? selectedClue.row : selectedClue.row + i;
+        const c = isAcross ? selectedClue.col + i : selectedClue.col;
+        if (r === ar && c === ac) {
+          if (cell.provisional) { onRemoveLetter(selectedClue.id, i); return; }
+          if (cell.draft) { onRemoveDraft(selectedClue.id, i); return; }
+          break;
+        }
+      }
+    }
+
+    // Fallback: erase last non-committed letter in the clue
     for (let i = selectedClue.length - 1; i >= 0; i--) {
       const r = isAcross ? selectedClue.row : selectedClue.row + i;
       const c = isAcross ? selectedClue.col + i : selectedClue.col;
@@ -985,6 +1042,66 @@ function ActivePuzzleView({
       if (cell.provisional) { onRemoveLetter(selectedClue.id, i); setFocusedCell(`${r},${c}`); return; }
       if (cell.draft) { onRemoveDraft(selectedClue.id, i); setFocusedCell(`${r},${c}`); return; }
     }
+  };
+
+  // Handle tile drop from QWERTY keyboard onto a grid cell
+  const handleCellDrop = (r, c, e) => {
+    e.preventDefault();
+    setDragOverCell(null);
+    let data;
+    try { data = JSON.parse(e.dataTransfer.getData("text/plain")); } catch { return; }
+    if (data.source !== "inventory" || !data.letter) return;
+    const cell = grid[r][c];
+    if (cell.isBlack || cell.placed) return;
+
+    // Resolve which clue + position this cell belongs to
+    const findCluePosition = (clueId) => {
+      const clue = [...clues.across, ...clues.down].find(cl => cl.id === clueId);
+      if (!clue) return null;
+      const isAcross = clues.across.includes(clue);
+      for (let i = 0; i < clue.length; i++) {
+        const cr = isAcross ? clue.row : clue.row + i;
+        const cc = isAcross ? clue.col + i : clue.col;
+        if (cr === r && cc === c) return { clue, position: i, isAcross };
+      }
+      return null;
+    };
+
+    // Prefer the currently selected clue if this cell is in it, else across, else down
+    let match = null;
+    if (selectedClueId) match = findCluePosition(selectedClueId);
+    if (!match && cell.acrossClueId) match = findCluePosition(cell.acrossClueId);
+    if (!match && cell.downClueId) match = findCluePosition(cell.downClueId);
+    if (!match) return;
+
+    const { clue, position, isAcross } = match;
+    const letter = data.letter;
+
+    // Select this clue so the cursor is in context
+    onSelectClue(clue.id, isAcross ? "across" : "down");
+
+    if (draftModeActive) {
+      onPlaceDraft(clue.id, position, letter);
+    } else {
+      // Resolve tileType → tileId for special tiles
+      let tileId = null;
+      if (data.tileType && data.tileType !== "normal" && data.tileType !== "lexicoin") {
+        const tile = availableSpecial.find(t => t.letter === letter && t.type === data.tileType);
+        tileId = tile?.id || null;
+      }
+      onPlaceLetter(clue.id, position, tileId, letter, data.tileType || "normal");
+    }
+
+    // Advance cursor to next empty cell in this clue
+    for (let i = position + 1; i < clue.length; i++) {
+      const nr = isAcross ? clue.row : clue.row + i;
+      const nc = isAcross ? clue.col + i : clue.col;
+      if (!grid[nr][nc].placed && !grid[nr][nc].provisional && !grid[nr][nc].draft) {
+        setFocusedCell(`${nr},${nc}`);
+        return;
+      }
+    }
+    setFocusedCell(null);
   };
 
   // Auto-scroll to active clue
@@ -1064,7 +1181,9 @@ function ActivePuzzleView({
         {/* Crossword Grid + Lexicoin balance */}
         <div style={{ flexShrink: 0 }}>
         <div ref={gridRef} style={{ ...st.panel, padding: 8, display: "flex", justifyContent: "center", marginBottom: 0, position: "relative" }}>
-          <div style={{
+          <div
+            onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverCell(null); }}
+            style={{
             display: "grid",
             gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
             gridTemplateRows: `repeat(${rows}, ${cellSize}px)`,
@@ -1080,6 +1199,9 @@ function ActivePuzzleView({
                 clueNumber={cellClueNumbers[`${r},${c}`]}
                 onClick={() => handleCellClick(r, c)}
                 onLongPress={() => handleCellLongPress(r, c)}
+                onDragOver={!cell.isBlack && !cell.placed ? e => { e.preventDefault(); setDragOverCell(`${r},${c}`); } : undefined}
+                onDrop={!cell.isBlack && !cell.placed ? e => handleCellDrop(r, c, e) : undefined}
+                isDragOver={dragOverCell === `${r},${c}`}
                 animClass={cellAnims[`${r},${c}`]?.type}
                 crackLetter={cellAnims[`${r},${c}`]?.letter}
               />
@@ -1303,7 +1425,16 @@ function ActivePuzzleView({
             <span style={{ fontWeight: 700, color: P.textPrimary, fontSize: sc(10) }}>If correct:</span>
           </div>
           <div style={{ paddingLeft: sc(14) }}>
-            <div>{scorePreview.letterBreak} = <b>{scorePreview.base}</b></div>
+            <div>{scorePreview.letterBreak} = <b>{scorePreview.letterTotal}</b></div>
+            {scorePreview.wordMult > 1 && (
+              <div>Word multiplier: ×{scorePreview.wordMult} = <b>{scorePreview.base}</b></div>
+            )}
+            <div>First guess: ×1.5</div>
+            {scorePreview.goldenCount > 0 && (
+              <div style={{ color: TILE_TYPES.golden.text }}>
+                ★ {scorePreview.goldenCount} Golden Notebook{scorePreview.goldenCount > 1 ? "s" : ""}
+              </div>
+            )}
             {scorePreview.hintCount > 0 && (
               <div style={{ color: P.textMuted, fontStyle: "italic" }}>
                 {scorePreview.hintCount} hint letter{scorePreview.hintCount > 1 ? "s" : ""} (0 pts)
@@ -1312,9 +1443,7 @@ function ActivePuzzleView({
             {scorePreview.diffMult !== 1 && (
               <div>Difficulty: ×{scorePreview.diffMult}</div>
             )}
-            <div>Clean solve: <b style={{ color: P.quill }}>{scorePreview.cleanTotal}</b>
-              <span style={{ color: P.textMuted }}> · with mistakes: {scorePreview.dirtyTotal}</span>
-            </div>
+            <div>Total: <b style={{ color: P.quill }}>{scorePreview.cleanTotal}</b></div>
           </div>
         </div>
       )}
@@ -1360,44 +1489,24 @@ function ActivePuzzleView({
             {draftModeActive ? "Draft On" : "Draft Off"}
           </button>
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, minHeight: 44 }}>
-          {draftModeActive ? (
-            /* Ghost tile inventory — spectral A-Z */
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(ch => (
-              <LetterTile key={ch} letter={ch} count={0} ghost
-                onClick={() => handleLetterClick(ch, null)} size={40} />
-            ))
-          ) : (<>
-            {Object.entries(available).length === 0 && availableSpecial.length === 0 ? (
-              <div style={{ fontSize: 13, color: P.textMuted, fontStyle: "italic" }}>No letters yet — visit the Press tab!</div>
-            ) : (<>
-              {Object.entries(available).sort().map(([ch, count]) => (
-                <LetterTile key={ch} letter={ch} count={count} onClick={() => handleLetterClick(ch, null)}
-                  size={40} />
-              ))}
-              {/* Special tiles grouped by type+letter */}
-              {(() => {
-                const specByKey = {};
-                availableSpecial.forEach(t => {
-                  const k = t.type === "lexicoin" ? "_wild" : `${t.letter}_${t.type}`;
-                  specByKey[k] = specByKey[k] || { letter: t.letter, type: t.type, count: 0, firstId: t.id };
-                  specByKey[k].count++;
-                });
-                return Object.values(specByKey).map(g => {
-                  const isWild = g.type === "lexicoin";
-                  return (
-                    <LetterTile key={g.type + (g.letter || "W")}
-                      letter={g.letter || ""}
-                      count={g.count}
-                      onClick={() => handleLetterClick(isWild ? "?" : g.letter, g.firstId)}
-                      size={40} tileType={g.type}
-                    />
-                  );
-                });
-              })()}
-            </>)}
-          </>)}
-        </div>
+        <QwertyInventory
+          letters={available}
+          specialTiles={availableSpecial}
+          ghostMode={draftModeActive}
+          onTileClick={(letter, tileType) => {
+            if (draftModeActive) { handleLetterClick(letter, null, "normal"); return; }
+            if (tileType !== "normal") {
+              const tile = availableSpecial.find(t => t.letter === letter && t.type === tileType);
+              handleLetterClick(letter, tile?.id || null, tileType);
+            } else {
+              handleLetterClick(letter, null, "normal");
+            }
+          }}
+          onWildcardClick={() => {
+            const wc = availableSpecial.find(t => t.type === "lexicoin");
+            if (wc) handleLetterClick("?", wc.id, "lexicoin");
+          }}
+        />
       </div>
 
       {/* Draft mode hint */}

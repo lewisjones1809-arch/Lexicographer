@@ -8,7 +8,7 @@ import { fmt } from "../gameUtils.js";
 import { mkPressUpg, cycleQty } from "../upgradeUtils.js";
 import { UPGRADES_BY_NAME } from "../upgrades.js";
 import { PressMiniCard, DeviceUpgradeCard, QtySelector, InfoRow } from "./DeviceCards.jsx";
-import { LetterTile } from "./WordBoard.jsx";
+import { QwertyInventory } from "./QwertyInventory.jsx";
 
 const PRESS_SPECIAL_NAMES  = ["Double Letter %","Triple Letter %","Double Word %","Triple Word %","Wildcard %","Golden Tile %"];
 const PRESS_SPECIAL_LABELS = ["DL%","TL%","DW%","TW%","Wild%","Gold%"];
@@ -24,16 +24,7 @@ export function LetterPressTab({
   const [qty, setQty] = useState(1);
   const [showInfo, setShowInfo] = useState(false);
   const [selectedPress, setSelectedPress] = useState(0);
-  const le = Object.entries(letters).sort((a,b) => a[0].localeCompare(b[0]));
   const nextPressCost = pressCount < MAX_PRESSES ? PRESS_COSTS[pressCount] : null;
-
-  // Group special tiles for display
-  const specGroups = {};
-  specialTiles.forEach(t => {
-    const k = t.type === "lexicoin" ? "_wild" : `${t.letter}_${t.type}`;
-    specGroups[k] = specGroups[k] || { letter:t.letter, type:t.type, count:0 };
-    specGroups[k].count++;
-  });
 
   return (
     <div className="lex-tab-panel" style={{ paddingTop:12, position:"relative" }}>
@@ -203,16 +194,7 @@ export function LetterPressTab({
               <div style={{ ...st.sub }}>Current inventory</div>
               <div style={{ fontSize:10, color:P.textMuted, fontFamily:"'Junicode',sans-serif" }}>{totalLetters}/{maxLetters} letters</div>
             </div>
-            <div style={{ display:"flex", flexWrap:"wrap", gap:6, justifyContent:"center" }}>
-              {le.length === 0 && Object.keys(specGroups).length === 0 ? (
-                <div style={{ fontSize:12, color:P.textMuted, fontStyle:"italic" }}>No letters yet</div>
-              ) : (<>
-                {le.map(([l, c]) => <LetterTile key={l} letter={l} count={c} onClick={() => {}} size={34}/>)}
-                {Object.values(specGroups).map(g => (
-                  <LetterTile key={g.type + (g.letter||"W")} letter={g.letter||""} count={g.count} onClick={() => {}} size={34} tileType={g.type} />
-                ))}
-              </>)}
-            </div>
+            <QwertyInventory letters={letters} specialTiles={specialTiles} readOnly />
           </div>
         </div>
 

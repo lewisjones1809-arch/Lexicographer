@@ -1073,7 +1073,7 @@ export default function Lexicographer() {
     });
   }, []);
 
-  const onPlaceLetter = useCallback((clueId, position, tileId, letter) => {
+  const onPlaceLetter = useCallback((clueId, position, tileId, letter, tileType) => {
     setActivePuzzle(prev => {
       if (!prev) return prev;
       const allClues = [...prev.clues.across, ...prev.clues.down];
@@ -1087,6 +1087,7 @@ export default function Lexicographer() {
       if (cell.isBlack || cell.placed) return prev;
       cell.provisional = letter;
       cell.provisionalTileId = tileId;
+      cell.tileType = tileType || "normal";
       cell.draft = null; // clear any draft underneath
       return { ...prev, grid };
     });
@@ -1106,6 +1107,7 @@ export default function Lexicographer() {
       if (cell.isBlack || cell.placed) return prev;
       cell.provisional = null;
       cell.provisionalTileId = null;
+      cell.tileType = null;
       return { ...prev, grid };
     });
   }, []);
@@ -1194,7 +1196,7 @@ export default function Lexicographer() {
       }
 
       if (provisional === cell.letter) {
-        // Correct
+        // Correct — keep tileType for scoring
         cell.placed = provisional;
         cell.provisional = null;
         cell.provisionalTileId = null;
@@ -1204,6 +1206,7 @@ export default function Lexicographer() {
         anyIncorrect = true;
         cell.provisional = null;
         cell.provisionalTileId = null;
+        cell.tileType = null;
         cellResults.push({ row: r, col: c, result: "incorrect", lostLetter: provisional });
       }
     }

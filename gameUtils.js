@@ -181,7 +181,7 @@ export function scoreWordWithTiles(assignments) {
     else if (a.type === "lexicoin") { details.push(`wild→${a.letter}`); }
     letterTotal += ls;
   }
-  return { total: letterTotal * wordMult, wordMult, goldenCount, details };
+  return { total: letterTotal * wordMult, letterTotal, wordMult, goldenCount, details };
 }
 
 // --- LETTER AVAILABILITY ---

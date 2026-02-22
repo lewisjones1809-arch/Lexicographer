@@ -1,0 +1,54 @@
+# Lexicographer — Game Summary
+
+**Lexicographer** is an idle/incremental word game where you collect ink, press letter tiles, and inscribe valid English words into a lexicon (dictionary). When ready, you "publish" the lexicon to earn **Quills** (prestige currency), then reset and start a new round — stronger each time.
+
+---
+
+## Core Loop
+
+1. **Ink Wells** — up to 5 wells passively fill with ink. Collect manually (with crit chance for bonus ink) or hire managers to auto-collect. Upgradeable: fill rate, capacity, crit chance, crit multiplier.
+
+2. **Letter Presses** — up to 5 presses run 10-second production cycles yielding random letter tiles (weighted by English frequency). Can produce **special tiles**: Double Letter, Triple Letter, Double Word, Triple Word, Golden (★), and Lexicoin Wildcard (◈ — substitutes for any letter). Managers auto-restart idle presses.
+
+3. **Word Inscription** — drag letters onto a board, form a valid English word, and spend ink to add it to your lexicon. Words are scored Scrabble-style with tile bonuses stacking multiplicatively. Ink cost rises with each word added.
+
+4. **Publishing (Prestige)** — requires 10+ words. Converts the lexicon into Quills based on: number of **new** unique words, Lexicoin count, top-10 word scores, and cosmetic book bonuses. Resets ink, letters, wells, presses, and all per-device upgrades.
+
+---
+
+## Progression Systems
+
+| System | Currency | Persists? |
+|---|---|---|
+| Per-device upgrades (speed, capacity, crit, tile %) | Ink | Reset on publish |
+| Permanent upgrades (Letter Storage, Ink Multiplier, Bulk Buying) | Quills | Yes |
+| Cosmetics (book covers & page styles) | Golden Notebooks | Yes |
+| Monkeys, Achievements, Missions | Quills | Yes |
+
+---
+
+## Key Features
+
+- **Monkeys with Typewriters** — unlockable monkeys that auto-find words from previously published lexicons on a timer. Upgradeable: count (up to 20), find chance, efficiency (faster timer), precision & artistry (bonus tiles on found words).
+
+- **Daily Missions** — 3 per UTC day (e.g. "inscribe 10 words", "publish a lexicon"). Reward Quills on claim.
+
+- **Achievements** — tiered lifetime milestones (ink collected, unique words found, lexicons published, wildcard usage). Quill rewards per tier.
+
+- **Cosmetic Book Design** — covers (×1.00 to ×1.30 quill bonus) and page styles (×1.00 to ×1.15 bonus) change the visual book appearance and stack multiplicatively for up to ×1.495 on publish earnings.
+
+- **Library** — browse all previously published lexicons as mini book covers. Click to re-read any past lexicon with full page-flip navigation.
+
+- **Offline Progress** — simulates well filling, press completions, and monkey firings while the tab was closed.
+
+- **Accounts & Cloud Save** — optional login syncs state to a backend (Express + SQLite). Unauthenticated play is in-memory only (refresh = reset).
+
+- **IAP / Boosts** — Stripe-powered microtransactions for quill bundles, instant well fills, rare tiles, and premium cosmetics.
+
+---
+
+## Progression Arc
+
+**Early** → One well, manual ink collection, spell simple words, first publish for a handful of quills.
+**Mid** → Multiple wells/presses with managers, permanent upgrades accelerating each round, monkeys finding words.
+**Late** → Fleets of 20 monkeys, astronomical ink rates (fmt goes up to vigintillions), thousands of published lexicons, premium cosmetics maximizing quill yield. Only **new** words earn publish bonuses, pushing vocabulary discovery.
